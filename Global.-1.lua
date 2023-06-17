@@ -1,0 +1,2736 @@
+-- Terraforming Mars – Ares Expedition
+-- Script by Nor Dogroth, 10th February
+-- MOD ID	2931011437
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH CONSTANTS
+----------------------------------------------------------------------------------------------------------------------------
+PLAYER_COLORS = {'Red','Yellow','Blue','Green'}
+RESOURCES = {'MC','Cards','Heat','Plant','Steel','Titan'}
+TERRAFORMING = {'Temperature', 'Ocean', 'Forest', 'Oxygen', 'TR'}
+STEEL_VALUE = 2
+TITAN_VALUE = 3
+CARD_VALUE = 3
+RANGE_INDEX = {Purple=1, Red=2, Yellow=3, White=4}
+RANGE_NAME = {'Purple', 'Red', 'Yellow', 'White'}
+TERRAFORMING_RANGES = {
+	Temperature = {
+		Purple = {min=1,max=6},
+		Red = {min=7,max=11},
+		Yellow = {min=12,max=16},
+		White = {min=17,max=20}
+	},
+	Oxygen = {
+		Purple = {min=1,max=3},
+		Red = {min=4,max=7},
+		Yellow = {min=8,max=12},
+		White = {min=13,max=15}
+	}
+}
+PHASE_NAMES = {'Development','Construction','Action','Production','Research'}
+SYMBOLS = {'Building','Space','Power','Science','Jovian','Earth','Plant','Microbe','Animal','Event'}
+TOKENS = {'Microbe', 'Animal'}
+PROJ_COLORS = {'Green','Blue','Red'}
+COL_MSG = {0.8,0.6,0.3}
+COL_ERR = {0.9,0.5,0}
+HAND_INDEX_DRAW = 4
+HAND_INDEX_ALT = 2
+HAND_INDEX_CORP = 1
+HAND_INDEX_PHASE = 5
+RES_POSITIONS = {
+	MC = {0.5,0,-1.1},
+	Cards = {0.5,0,-0.5},
+	Heat = {0.5,0,0},
+	Plant = {0.5,0,0.6},
+	Steel = {0.5,0,1.1},
+	Titan = {-0.5,0,1.1},
+}
+MAX_TEMP = 20
+MAX_OXY = 15
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Global Vars
+----------------------------------------------------------------------------------------------------------------------------
+SHUFFLING = false
+GAME_STARTED = false
+CURRENT_PHASE = 0
+CURRENT_PHASES = { false,false,false,false,false }
+READY_STATE = { Red=false, Yellow=false, Blue=false, Green=false }
+SEATED_COLORS = { Red=true,Yellow=true,Blue=true,Green=true }
+REACH_TEMP = false
+REACH_OXY = false
+REACH_OCEAN = false
+
+-- Current effects & modifiers
+E_RED = {}
+E_BLUE = {}
+E_YELLOW = {}
+E_GREEN = {}
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Save & Load
+----------------------------------------------------------------------------------------------------------------------------
+function onSave()
+    saved_data = JSON.encode({
+    		GAME_STARTED=GAME_STARTED,
+    		SEATED_COLORS=SEATED_COLORS,
+    		READY_STATE = READY_STATE,
+    		CURRENT_PHASE = CURRENT_PHASE,
+			CURRENT_PHASES = CURRENT_PHASES,
+			REACH_TEMP = REACH_TEMP,
+			REACH_OXY = REACH_OXY,
+			REACH_OCEAN = REACH_OCEAN,
+			E_RED = E_RED,
+			E_BLUE = E_BLUE,
+			E_YELLOW = E_YELLOW,
+			E_GREEN = E_GREEN,
+    })
+    return saved_data
+end
+
+function onLoad(saved_data)
+    if saved_data != '' then
+        local loaded_data = JSON.decode(saved_data)
+        GAME_STARTED = loaded_data.GAME_STARTED or GAME_STARTED
+        SEATED_COLORS = loaded_data.SEATED_COLORS or SEATED_COLORS
+        READY_STATE = loaded_data.READY_STATE or READY_STATE
+    	CURRENT_PHASE = loaded_data.CURRENT_PHASE or CURRENT_PHASE
+		CURRENT_PHASES = loaded_data.CURRENT_PHASES or CURRENT_PHASES
+		REACH_TEMP = loaded_data.REACH_TEMP or REACH_TEMP
+		REACH_OXY = loaded_data.REACH_OXY or REACH_OXY
+		REACH_OCEAN = loaded_data.REACH_OCEAN or REACH_OCEAN
+		E_RED = loaded_data.E_RED or E_RED
+		E_BLUE = loaded_data.E_BLUE or E_BLUE
+		E_YELLOW = loaded_data.E_YELLOW or E_YELLOW
+		E_GREEN = loaded_data.E_GREEN or E_GREEN
+    end
+
+	for pcolor, seated in pairs(SEATED_COLORS) do
+		if seated then
+			local player = Player[pcolor]
+			local count = player.getHandCount()
+			for hand_index=1,count do
+				local cards = player.getHandObjects(hand_index)
+
+				for _, card in pairs(cards) do
+					if card.hasTag('Corporation') then
+						createActivateCorpButton(card)
+					end
+
+					if card.hasTag('Project') then
+						createActivateProjectButton(card)
+					end
+				end
+			end
+
+		end
+	end
+
+    if GAME_STARTED then createStandardActionButtons() end
+ end
+
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Standard Actions
+----------------------------------------------------------------------------------------------------------------------------
+
+function createStandardActionButtons()
+	local boards = gtag('ResourceBoard')
+	local y, c = 1.445, {0,0,0,0.4}
+	local paramSet = {
+		{ position={-0.67,1,y}, scale={1.7,1,0.7}, color=c, tooltip='(L) Spend 20 MC to gain a forest VP and raise the oxygen one step\n(R) Raise oxygen for free', click_function='stActBuyForest' },
+		{ position={-0.36,1,y}, scale={1.3,1,0.7}, color=c, tooltip='(L) Spend 14 MC to raise the temperature one step (R) Raise it for free', click_function='stActBuyTemp' },
+		{ position={-0.02,1,y}, scale={1.9,1,0.7}, color=c, tooltip='(L) Spend 8 plants to gain a forest VP and raise the oxygen one step (R) Gain for free', click_function='stActPlantForest' },
+		{ position={0.35,1,y}, scale={1.6,1,0.7}, color=c, tooltip='(L) Spend 8 heat to raise the temperature one step (R) Raise it for free', click_function='stActHeat' },
+		{ position={0.68,1,y}, scale={1.6,1,0.7}, color=c, tooltip='(L) Spend 15 MC to flip an ocean tile\n(R) Flip an ocean tile for free', click_function='stActBuyOcean' },
+	}
+	for _,params in ipairs(paramSet) do
+		for _,board in ipairs(boards) do
+			board.createButton(params)
+		end
+	end
+end
+
+-- pay MC to gain forest vp and raise oxygen
+function stActBuyForest(board,pcolor,alt)
+	if pcolor != getOwner(board) then sendError('This board is not yours',pcolor) return end
+	if alt then
+		if incOxygen(1,pcolor) != 0 then
+			printToColor('You raised the oxygen 1 step for free',pcolor)
+		else
+			sendError('Oxygen is at maximun',pcolor)
+		end
+	else
+		addRes(pcolor,-20)
+		printToColor('You paid 20 MC to gain a forest VP',pcolor)
+		plantForest(pcolor)
+	end
+end
+
+-- pay plants to gain forest vp and raise oxygen
+function stActPlantForest(board,pcolor,alt)
+	if pcolor != getOwner(board) then sendError('This board is not yours',pcolor) return end
+	if alt then
+		printToColor('You got 1 forest VP for free',pcolor)
+	else
+		local plants = 8 + gmod(pcolor,'plantForest')
+		addRes(pcolor,-plants,'Plant')
+		printToColor('You spent '..plants..' plants to gain a forest VP',pcolor)
+	end
+	plantForest(pcolor)
+end
+
+-- pay MC to raise temperature
+function stActBuyTemp(board,pcolor,alt)
+	if pcolor != getOwner(board) then sendError('This board is not yours',pcolor) return end
+	if getTemperature() == MAX_TEMP and not REACH_TEMP then sendError('Temperature is at maximum',pcolor) return end
+	if not alt then
+		addRes(pcolor,-14)
+		printToColor('You paid 14 MC to raise the temperature',pcolor)
+	end
+	incTemperature(1,pcolor)
+end
+
+-- pay heat to raise temperature
+function stActHeat(board,pcolor,alt)
+	if pcolor != getOwner(board) then sendError('This board is not yours',pcolor) return end
+	if getTemperature() == MAX_TEMP and not REACH_TEMP then sendError('Temperature is at maximum',pcolor) return end
+	if not alt then
+		addRes(pcolor,-8,'Heat')
+		printToColor('You spent 8 heat to raise the temperature',pcolor)
+	end
+	incTemperature(1,pcolor)
+end
+
+-- pay MC to flip an ocean
+function stActBuyOcean(board,pcolor,alt)
+	if pcolor != getOwner(board) then sendError('This board is not yours',pcolor) return end
+	if #getDryOceans() == 0 and not REACH_OCEAN then sendError('All oceans have been flipped',pcolor) return end
+	if not alt then
+		addRes(pcolor,-15)
+		printToColor('You paid 15 MC to flip an ocean tile',pcolor)
+	end
+	flipOcean(pcolor)
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Terraforming – Temperature + Oxygen + Oceans
+----------------------------------------------------------------------------------------------------------------------------
+
+-- return list of oceans that can be flipped
+function getDryOceans()
+	return gtags({'Ocean','dry'})
+end
+
+-- return list of oceans that are already flipped
+function getOceans()
+	return gtags({'Ocean','wet'})
+end
+
+-- flip an ocean tile and activate it for given player
+function flipOcean(pcolor)
+	local dryOceans = getDryOceans()
+	local ocean = getRandomElement(dryOceans)
+	if ocean then
+		if #dryOceans == 1 then
+			ocean.addTag('lastOcean')
+			callAction(' has flipped the last ocean tile. Players may flip it multiple times until the end of this phase.',pcolor)
+			REACH_OCEAN = true
+		else
+			callAction(' has flipped an ocean tile',pcolor)
+		end
+		ocean.flip()
+		ocean.removeTag('dry')
+		ocean.addTag('wet')
+	elseif REACH_OCEAN then
+		ocean = gftag('lastOcean')
+	else
+		return
+	end
+	addTR(pcolor)
+	activateOceanBonus(ocean,pcolor)
+	onTerraforming(pcolor, 'Ocean')
+end
+
+-- increase ocean by given value
+function incOcean(inc, pcolor)
+	for i=1,inc do flipOcean(pcolor) end
+end
+
+function activateOceanBonus(ocean,pcolor)
+	local nr = tonumber(ocean.memo)
+	if nr == 1 then
+		addRes(pcolor,2,'Plant')
+		printToColor('Ocean: You got 1 TR and 2 plants',pcolor)
+	elseif nr == 2 then
+		draw(pcolor)
+		printToColor('Ocean: You got 1 TR and 1 card',pcolor)
+	elseif nr == 3 then
+		draw(pcolor)
+		addRes(pcolor,1,'Plant')
+		printToColor('Ocean: You got 1 TR, 1 card and 1 plant',pcolor)
+	elseif nr == 4 then
+		addRes(pcolor,2)
+		addRes(pcolor,1,'Plant')
+		printToColor('Ocean: You got 1 TR, 2 MC and 1 plant',pcolor)
+	elseif nr == 5 then
+		addRes(pcolor)
+		addRes(pcolor,1,'Plant')
+		printToColor('Ocean: You got 1 TR, 1 MC and 1 plant',pcolor)
+	elseif nr == 6 then
+		addRes(pcolor,4)
+		printToColor('Ocean: You got 1 TR and 4 MC',pcolor)
+	elseif nr == 7 then
+		draw(pcolor)
+		addRes(pcolor)
+		printToColor('Ocean: You got 1 TR, 1 card and 1 MC',pcolor)
+	end
+end
+
+-- return current temperatur parameter
+function getTemperature()
+	local board = gftag('Mars')
+	local cube = gftag('TemperatureCube')
+	if not cube then sendError('Could not find temperature tracker') return 0 end
+	for i,snap in ipairs(getSnapsWithTag(board,'TemperatureCube')) do
+		local pos = board.positionToWorld(snap.position)
+		local d = round(distance(pos,cube.getPosition()),1)
+		if d == 0 then return i end
+	end
+	sendError('Temperature tracker was on invalid position')
+	return 0
+end
+
+-- return current oxygen parameter
+function getOxygen()
+	local board = gftag('Mars')
+	local cube = gftag('OxygenCube')
+	if not cube then sendError('Could not find oxygen tracker') return 0 end
+	for i,snap in ipairs(getSnapsWithTag(board,'OxygenCube')) do
+		local pos = board.positionToWorld(snap.position)
+		local d = round(distance(pos,cube.getPosition()),1)
+		if d == 0 then return i end
+	end
+	sendError('Oxygen tracker was on invalid position')
+	return 0
+end
+
+-- return set temperature paramer
+function setTemperature(value)
+	local board = gftag('Mars')
+	local pos = above(getSnapPos(board,'TemperatureCube',value))
+	local rot = getSnapRot(board,'TemperatureCube',value)
+	local cube = gftag('TemperatureCube')
+	if not cube then sendError('Could not find temperature tracker') return end
+	cube.setPosition(pos)
+	cube.setRotationSmooth(rot)
+end
+
+-- increase temperature by given value
+function incTemperature(inc,pcolor)
+	local value = getTemperature()
+	local inc = inc or 1
+	if MAX_TEMP-value-inc > 0  then
+		setTemperature(value+inc)
+	elseif MAX_TEMP-value > 0  then
+		setTemperature(MAX_TEMP)
+		REACH_TEMP = true
+		broadcastToAll('Temperature reached its maximum. Players may still raise it with all benefits until the end of the current phase.')
+	elseif REACH_TEMP then
+	else
+		return 0
+	end
+	callAction(" raised the temperature by " .. inc,pcolor)
+	addTR(pcolor,inc)
+	printToColor('You got ' .. inc .. ' TR for raising the temperature',pcolor)
+	onTerraforming(pcolor, 'Temperature')
+	return inc
+end
+
+-- return set oxygen paramer
+function setOxygen(value)
+	local board = gftag('Mars')
+	local pos = above(getSnapPos(board,'OxygenCube',value))
+	local rot = getSnapRot(board,'OxygenCube',value)
+	local cube = gftag('OxygenCube')
+	if not cube then sendError('Could not find oxygen tracker') return end
+	cube.setPosition(pos)
+	cube.setRotationSmooth(rot)
+end
+
+-- increase oxygen by given value
+function incOxygen(inc,pcolor)
+	local value = getOxygen()
+	local inc = inc or 1
+	if MAX_OXY-value-inc > 0  then
+		setOxygen(value+inc)
+	elseif MAX_OXY-value > 0  then
+		setOxygen(MAX_OXY)
+		REACH_OXY = true
+		broadcastToAll('Oxygen reached its maximum. Players may still raise it with all benefits until the end of the current phase.')
+	elseif REACH_OXY then
+	else
+		return 0
+	end
+	callAction(" raised the oxygen by " .. inc,pcolor)
+	addTR(pcolor,inc)
+	printToColor('You got ' .. inc .. ' TR for raising the oxygen',pcolor)
+	onTerraforming(pcolor, 'Oxygen')
+	return inc
+end
+
+-- add a forest vp for given player (do not raise oxygen here)
+function addForestVP(pcolor)
+	local forestCounter = gftags({'ForestCounter','c'..pcolor})
+	if forestCounter then
+		forestCounter.call('add')
+		onTerraforming(pcolor, 'Forest')
+	end
+end
+
+function getForestVP(pcolor)
+	local forestCounter = gftags({'ForestCounter','c'..pcolor})
+	if forestCounter then
+		return tonumber(forestCounter.call('get'))
+	end
+end
+
+-- increase forest vp by given value
+function incForestVP(inc, pcolor)
+	for i=1,inc do addForestVP(pcolor) end
+end
+
+-- add forest vp and raise oxygen
+function plantForest(pcolor)
+	addForestVP(pcolor)
+	incOxygen(1,pcolor)
+end
+
+-- increase forest vp and oxygen by given value
+function incForest(inc, pcolor)
+	incForestVP(inc, pcolor)
+	incOxygen(inc, pcolor)
+end
+
+function onTerraforming(pcolor, terraforming)
+	mod = gmod(pcolor, 'on'..terraforming)
+
+	if 'number' != type(mod) then
+		onPlay(pcolor, mod)
+	end
+end
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Corporations
+----------------------------------------------------------------------------------------------------------------------------
+-- returns the selected coorp of given player
+function getActiveCorp(pcolor)
+	local board = gftags({'c'..pcolor,'PlayerBoard'})
+	local pos = getSnapPos(board,'Corporation')
+	return getCardsOnPos(pos)
+end
+
+-- add button on spawned coorp to activate/trash it
+function createActivateCorpButton(card)
+	card.createButton({
+       click_function="activateCorp", position={0,0.6,0}, height=200, width=400,
+       color={0,1,0,0.6}, scale={1,1,1}, tooltip="(L) Activate (R) Discard"
+    })
+end
+
+-- select and activate corporation on click
+function activateCorp(card,pcolor,alt)
+	if alt then trash(card) return end
+	if card.name == 'Deck' then sendError("You cannot activate deck",pcolor) card.clearButtons() return end
+	if getActiveCorp(pcolor) then sendError("You already have a corporation",pcolor) return end
+	local data = CARDS[gnote(card)]
+	if not data then sendError("Could not find data for this corporation",pcolor) return end
+	callAction(' starts the expedition with [CB5500]' .. gname(card),pcolor)
+
+	local mc = data.MC
+	addRes(pcolor,mc)
+	printToColor("Starting MC from your corporation: " .. mc,pcolor)
+
+	local drawing = data.Cards
+	if drawing then
+		draw(pcolor,drawing,true)
+		printToColor("Starting with " .. drawing .. " additional cards from your corporation",pcolor)
+	end
+	if data.drawChoice then draw(pcolor,data.drawChoice) end
+
+	for _,res in ipairs(RESOURCES) do
+		local production = data[res..'Production']		
+		if production then
+			local prod = gprod(pcolor, res)
+			prod['Static'] = (prod[resType] or 0) + production
+			aprod(pcolor, res, prod)
+			updateProduction(pcolor, res)
+			printToColor("Starting " .. res .. " production from your corporation: "..production,pcolor)
+		end
+	end
+
+	amodList(pcolor, data.effects or {})
+
+	if data.revealCards then
+		revealCards(pcolor, data.revealCards)
+	end
+
+	if data.manually then
+		broadcastToColor('Please finish corporation setup manually',pcolor,'Orange')
+		printToColor('→ '..data.manually,pcolor)
+	end
+
+	local board = gftags({'c'..pcolor,'PlayerBoard'})
+	local pos = getSnapPos(board,'Corporation')
+	card.setPosition(pos)
+	card.addTag('activated')
+	card.setLock(true)
+	card.clearButtons()
+	Wait.frames(|| discardRemainingCorps(pcolor),10)
+end
+
+-- discard any remaining coorps in player hand
+function discardRemainingCorps(pcolor)
+	local cards = Player[pcolor].getHandObjects(HAND_INDEX_CORP)
+	for _,card in ipairs(cards) do
+		if card.hasTag('Corporation') then trash(card) end
+	end
+end
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Projects
+----------------------------------------------------------------------------------------------------------------------------
+
+function createActivateProjectButton(card)
+	card.createButton({
+       click_function="activateProject", position={0,0.6,0}, height=200, width=400,
+       color={0,1,0,0.6}, scale={1,1,1}, tooltip="Activate"
+    })
+end
+
+function createProjectActionButton(card)
+	local data = CARDS[gnote(card)]
+
+	if data['action'] then
+		card.createButton({
+			click_function="activateProjectAction", position={-0.62,0.6,1.02}, height=300, width=350,
+			color={1,0,0,0.7}, scale={1,1,1}, tooltip="Activate"
+		})
+	end
+end
+
+-- select and activate project on click
+function activateProject(card,pcolor,alt)
+	if card.name == 'Deck' then sendError("You cannot activate deck",pcolor) card.clearButtons() return end
+
+	local data = CARDS[gnote(card)]
+	if not data then sendError("Could not find data for this project",pcolor) return end
+	local cardName = gname(card)
+	local cardColor = getProjColor(card)
+	local cardHex = Color[getProjColor(card)]:toHex()
+	local basicColor = Color['White']:toHex()
+
+	local cost = getCost(card, pcolor)
+
+	if alt then
+		printToColor(
+			string.format(
+				'The project [%s]%s[%s] will cost you %d MC',
+				cardHex,cardName,basicColor,cost
+			),
+			pcolor
+		)
+		return
+	end
+
+	-- check if the current phase allow this card
+	-- todo / handle special cards
+	if 1 != CURRENT_PHASE then
+		if 'Green' == cardColor and 0 == gmod(pcolor, 'playGreenDuringConstruction') then
+			sendError('You cannot play this project during this phase',pcolor)
+			return
+		end
+		if 1 == gmod(pcolor, 'playGreenDuringConstruction') then amod(pcolor, 'playGreenDuringConstruction', 0) end
+	end
+
+	if 2 != CURRENT_PHASE then
+		if 'Blue' == cardColor or 'Red' == cardColor then
+			sendError('You cannot play this project during this phase',pcolor)
+			return
+		end
+	end
+
+	local projectLimit = gstate(pcolor,'projectLimit')
+	if projectLimit < 1 then
+		sendError('You cannot play more projects this phase',pcolor)
+		return
+	end
+
+	-- check if project can be played
+	if not fulfillConditions(data.req or {}, pcolor) then
+		return
+	end
+
+	local mc = getRes(pcolor,'MC')
+	if 0 == gstate(pcolor,'freeGreenNineLess') then
+		if mc < cost then
+			sendError("You don't have enough MC ("..cost..") for this project", pcolor)
+			return
+		end
+
+		addRes(pcolor, -cost, 'MC')
+		if gmod(pcolor, 'payCardTemp') < 0 then amod(pcolor,'payCardTemp', -gmod(pcolor,'payCardTemp')) end
+	else
+		if getBaseCost(card,pcolor) > 9 then
+			sendError('This project cost more than 9 MC', pcolor)
+			return
+		end
+		astate(pcolor,'freeGreenNineLess',-1)
+	end
+
+	callAction(' play the project ['..cardHex..']' .. cardName, pcolor)
+	astate(pcolor,'projectLimit', -1)
+	if 1 == gmod(pcolor, 'conditionPufferTemp') then amod(pcolor,'conditionPufferTemp', -1) end
+
+	printToColor(string.format(
+			"Cost of your last project (%d MC): [%s] %s",
+			cost, cardHex, cardName
+	), pcolor)
+
+	activateProjectProduction(card, pcolor)
+
+	for inst,instGain in pairs(data.instant or {}) do
+		local gainValue = 0
+
+		if 'table' == type(instGain) then
+			for type,typeData in pairs(instGain) do
+				if 'Symbol' == type then
+					for symbol,symbolGain in pairs(typeData) do
+						gainValue = getTagCount(symbol,pcolor) * symbolGain
+						if card.hasTag(symbol) then gainValue = gainValue + symbolGain end
+					end
+				end
+			end
+		elseif 'number' == type(instGain) then
+			gainValue = instGain
+		end
+
+		if contains(TERRAFORMING, inst) then
+			_G['inc'..inst](gainValue,pcolor)
+		end
+
+		if contains(RESOURCES, inst) then
+			addRes(pcolor,gainValue,inst)
+			printToColor(string.format(
+				"Gained %d %s(s) from your project: [%s] %s", 
+				gainValue, inst, cardHex, cardName
+			), pcolor)
+		end
+	end
+
+	if data.revealCards then
+		revealCards(pcolor, data.revealCards)
+	end
+
+	astateList(pcolor, data.state or {})
+
+	amodList(pcolor, data.effects or {})
+
+	playCardOnBoard(pcolor, card)
+
+	amodList(pcolor, data.afterEffects or {})
+
+	if data.manually then
+		Wait.time(|| broadcastToColor(data.manually,pcolor,'Orange'), 2)
+	end
+
+	if data.tokenType then
+		card.addTag(data.tokenType..'Holder')
+	end
+
+	Wait.time(|| updateProductions(pcolor),1)
+	if gstate(pcolor,'projectLimit') < 1 then
+		Wait.time(|| setReady(pcolor,true),3)
+	end
+end
+
+function onPlay(pcolor, effects)
+	for effectType,typeData in pairs(effects) do
+		if contains(RESOURCES,effectType) then
+			addRes(pcolor, typeData, effectType)
+		end
+		
+		if 'Token' == effectType then
+			for _,effect in pairs(typeData) do
+				local where = effect['where']
+
+				if 'others' == where then
+
+				else
+					local card = gcard(pcolor, where)
+					addToken(card, 1)
+				end
+			end
+		end
+
+		if 'TR' == effectType then
+			addTR(pcolor, typeData)
+		end
+	end
+end
+
+function revealCards(pcolor, reveal)
+	local searching = {}
+
+	if reveal['Color'] or (reveal['Symbol'] and 'string' == type(reveal['Symbol'])) then
+		searching = {reveal['Color'] or reveal['Symbol']}
+	elseif reveal['Symbol'] and 'table' == type(reveal['Symbol']) then
+		searching = reveal['Symbol']
+	end
+
+	draw(pcolor,1)
+	Wait.frames(|| revealCard(pcolor, searching), 50)
+end
+
+function revealCard(pcolor, tagList)
+	local cards = Player[pcolor].getHandObjects(HAND_INDEX_DRAW)
+	for _,tag in pairs(tagList) do
+		if cards[#cards].hasTag(tag) then
+			broadcastToColor('Keep the last card and discard the rest',pcolor,'Orange')
+			return
+		end
+	end
+
+	draw(pcolor,1)
+	Wait.frames(|| revealCard(pcolor, tagList), 50)
+end
+
+function activateProjectAction(card, pcolor, alt)
+	local data = CARDS[gnote(card)]
+	local action = data.action
+
+	if 1 == gmod(pcolor, 'gainForCustomAction') then
+		addRes(pcolor, 1, 'MC')
+	end
+
+	for cost,value in pairs(action['cost'] or {}) do
+		if contains(RESOURCES, cost) then
+			local res = getRes(pcolor, cost)
+			local trueValue = value
+
+			if 'table' == type(value) then
+				local base = value['base']
+				local reduction = 0
+
+				if value['reductionRes'] then
+					reduction = getRes(pcolor, value['reductionRes']) * value['reductionVal']
+				elseif value['reductionSymbol'] then
+					reduction = getTagCount(value['reductionSymbol'], pcolor) * value['reductionVal']
+				elseif value['reductionAction'] then
+					reduction = value['reductionAction']
+				elseif value['reductionCondition'] then
+					local condition = true
+
+					for conditionType,conditionValue in pairs(value['reductionCondition']) do
+						if contains(PROJ_COLORS, conditionType) then
+							condition = condition and (getColorCount(pcolor, conditionType) >= conditionValue)
+						end
+
+						if contains(SYMBOLS, conditionType) then
+							condition = condition and (getTagCount(pcolor, conditionType) >= conditionValue)
+						end
+					end
+
+					if condition then
+						reduction = value['reductionVal']
+					end
+				end
+
+				trueValue = base - reduction
+				if trueValue < 0 then trueValue = 0 end
+			end
+			
+			if trueValue > res then
+				-- send error when not enought resources
+				sendError('You do not have enought '..cost)
+				return
+			end
+
+			printToColor('You paid '..trueValue..' '..cost..' to use this action', pcolor)
+			addRes(pcolor, -trueValue, cost)
+		end
+	end
+
+	for profit, value in pairs(action['profit'] or {}) do
+		if contains(RESOURCES, profit) then
+			addRes(pcolor, value, profit)
+		end
+		if contains(TERRAFORMING,profit) then
+			_G['inc'..profit](value, pcolor)
+		end
+		if 'Token' == profit then
+			if value.where then
+				local card = gcard(pcolor, value.where)
+				addToken(card, 1)
+			else
+				selectTokenHolder(pcolor, value)
+			end
+		end
+	end
+
+	if hasActivePhase(pcolor,3) then
+		for profit, value in pairs(action['profitBonus'] or {}) do
+			if contains(RESOURCES, profit) then
+				addRes(pcolor, value, profit)
+			end
+		end
+	end
+
+	if action['customAction'] then
+		local custom = action['customAction']
+		if 'greenMCrestKeep' == custom then
+			draw(pcolor, 1)
+			local cards = Player[pcolor].getHandObjects(HAND_INDEX_DRAW)
+			local card = cards[1]
+
+			if card.hasTag('Green') then
+				addRes(pcolor, 1, 'MC')
+				discard(card)
+			end
+		end
+	end
+
+	card.removeButton(0)
+end
+
+function activateProjectProduction(card, pcolor)
+	local data = CARDS[gnote(card)]
+	local cardName = gname(card)
+	local cardColor = Color[getProjColor(card)]:toHex()
+
+	for res, resData in pairs(data.production or {}) do
+		local total = getProduction(pcolor,res)
+		local prod = gprod(pcolor, res)
+		for resType, resProd in pairs(resData) do
+			if 'Symbol' == resType then
+				local symbolList = prod[resType] or {}
+				for symbol,value in pairs(resProd) do
+					symbolList[symbol] = (symbolList[symbol] or 0) + value
+				end
+				prod[resType] = symbolList
+			else
+				prod[resType] = (prod[resType] or 0) + resProd
+			end
+		end
+		aprod(pcolor, res, prod)
+
+		-- update production
+		updateProduction(pcolor, res)
+
+		-- calculate diff from start production
+		local delta = getProduction(pcolor,res) - total
+
+		mod = gmod(pcolor, 'onPlay'..res..'Production')
+		if 'table' == type(mod) then
+			for bonus,value in pairs(mod) do
+				if 'TR' == bonus then
+					local bonusValue = value * delta
+					addTR(pcolor, bonusValue)
+				end
+			end
+		end
+		
+		if delta > 0 then
+			printToColor(string.format(
+				"Secured %d %s production from your project: [%s] %s",
+				delta, res, cardColor, cardName
+			), pcolor)
+		end
+	end
+end
+
+function getProjectSnapPos(obj,stag,index)
+	local pos = findProjectSnapOnObj(obj,stag,index).position
+	return obj.positionToWorld(pos)
+end
+-- find snap point with given tag and -given index on obj
+function findProjectSnapOnObj(obj,stag,index)
+	if not obj then sendError("Missing Object") return {position={0,10,0}} end
+	local snaps = obj.getSnapPoints()
+	local n = 0
+	local index = index or 1
+	for s,snap in ipairs(snaps) do
+		if hasTagInRef(snap,stag) then
+			local cards = getCardsOnPos(obj.positionToWorld(snap.position))
+			log(cards)
+			if nil == cards then
+				return snap
+			end
+		end
+	end
+	return nil
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Resources
+----------------------------------------------------------------------------------------------------------------------------
+-- inc resource counter for given player and resource
+function addRes(pcolor,add,res)
+	local res = res or 'MC'
+
+	if 'Cards' == res then
+		draw(pcolor,add or 1)
+	else
+		local resCounter = gftags({res..'Counter','c'..pcolor})
+		if resCounter then resCounter.call('addCount',add or 1) end
+	end
+end
+
+function getRes(pcolor, res)
+	local resCounter = gftags({res..'Counter','c'..pcolor})
+	if resCounter then
+		return tonumber(resCounter.UI.getAttribute('counterText','text'))
+	end
+end
+
+-- inc resource counters for player by current production rate
+function produce(pcolor)
+	printToColor("–– Auto Production –– ",pcolor,COL_MSG)
+	for i,res in ipairs({'MC','Heat','Plant'}) do
+		local add = getProduction(pcolor,res)
+		if res == 'MC' then
+			add = add + getTR(pcolor)
+			if hasActivePhase(pcolor,4) then
+				add = add + 4
+			end
+		end
+		addRes(pcolor,add,res)
+		printToColor(res .. " production: " .. add,pcolor)
+	end
+	local drawing = getProduction(pcolor,'Cards')
+	if drawing > 0 then
+		draw(pcolor,drawing)
+		printToColor("Cards from production: " .. drawing,pcolor)
+	end
+end
+
+-- return current production rate of given player and resource
+function getProduction(pcolor,res,cubes)
+	local cubes = cubes or getResourceCubes(pcolor,res)
+	local value = 0
+	for _,cube in ipairs(cubes) do
+		value = value + getCubeProd(cube,res,pcolor)
+	end
+	return value
+end
+
+-- update the production based on user state
+function updateProduction(pcolor, res)
+	local current = getProduction(pcolor, res)
+	local prod = gprod(pcolor, res)
+
+	local static = prod['Static'] or 0
+	local symbol = prod['Symbol'] or {}
+	local forest = prod['Forest'] or 0
+
+	local newProduction = static
+	local symbolProd = 0
+	for symbol,value in pairs(symbol) do
+		symbolProd = value * getTagCount(symbol, pcolor)
+		newProduction = newProduction + math.floor(symbolProd)
+	end
+
+	local forestProd = forest * getForestVP(pcolor)
+	newProduction = newProduction + forestProd
+
+	local delta = newProduction - current
+	if delta != 0 then
+		addProduction(pcolor, res, delta)
+	end
+end
+
+-- update
+function updateProductions(pcolor)
+	for _,res in pairs(RESOURCES) do
+		updateProduction(pcolor, res)
+	end
+end
+
+-- return a list of player cubes representing production rate of given resource
+function getResourceCubes(pcolor,res)
+	local res = res or 'MC'
+	local board = gftags({'c'..pcolor,'ResourceBoard'})
+	local pos = board.positionToWorld(RES_POSITIONS[res])
+	local size = multPosition(board.getBoundsNormalized().size,{0.4,1,0.15})
+	local hitList = Physics.cast({
+		origin = pos, type = 3, direction = {0, 1, 0}, size = size, max_distance=2 --, debug=true
+	})
+	local cubes = {}
+	for _,hit in ipairs(hitList) do
+		local obj = hit['hit_object']
+		if obj.hasTag('PlayerCube') then table.insert(cubes,obj) end
+	end
+-- 	log(#cubes .. " Würfel gefunden")
+	return cubes
+end
+
+-- return production value for given player cube depending on its position
+function getCubeProd(cube,res,pcolor)
+	local pcolor = pcolor or getOwner(cube)
+	local res = res or 'MC'
+	local board = gftags({'c'..pcolor,'ResourceBoard'})
+	for i,snap in ipairs(getSnapsWithTag(board,res)) do
+		local pos = board.positionToWorld(snap.position)
+		local d = round(distance(pos,cube.getPosition()),1)
+		if d == 0 then return getSnapResValue(i) end
+	end
+end
+
+-- turn resource production field index into its shown value
+function getSnapResValue(index)
+	if index < 11 then return index-1
+	elseif index == 11 then return 10
+	elseif index == 12 then return 20
+	elseif index == 13 then return 30
+	else return 0 end
+end
+
+-- turn resource production field value into its index
+function getResSnapIndex(value)
+	if value < 20 then return value + 1
+	elseif value == 20 then return 12
+	elseif value == 30 then return 13
+	else return 1 end
+end
+
+-- return list of existing production fields for given resource
+function getResProdFiels(res)
+	local fields = {20,10,9,8,7,6,5,4,3,2,1}
+	if res != 'Steel' and res != 'Titan' then
+		table.insert(fields,1,30)
+	end
+	return fields
+end
+
+-- increase production rate of given resource for given player
+function addProduction(pcolor,res,add)
+	local cubes = getResourceCubes(pcolor,res)
+	local value = math.max(0,getProduction(pcolor,res,cubes) + add)
+	updateProductionCubes(pcolor,res,value,cubes)
+end
+
+-- set player cubes to set production rate for given resource
+function updateProductionCubes(pcolor,res,value,cubes)
+	local board = gftags({'c'..pcolor,'ResourceBoard'})
+	local cubes = cubes or getResourceCubes(pcolor,res)
+	local fields = getResProdFiels(res)
+	local ccount = 0
+	for _,field in ipairs(fields) do
+		local fcount = 0
+		while value >= field do
+			ccount = ccount + 1
+			fcount = fcount + 1
+			local cube = cubes[ccount] or getNewPlayerCube(pcolor)
+			local index = getResSnapIndex(field)
+			local pos = above(getSnapPos(board,res,index),fcount)
+			cube.setPosition(pos)
+			value = value - field
+		end
+	end
+	if #cubes > ccount then
+		for i=ccount+1,#cubes do cubes[i].destruct() end
+	end
+end
+
+-- return a new created player cube
+function getNewPlayerCube(pcolor)
+	local bag = gftags({'c'..pcolor,'CubeBag'})
+	return bag.takeObject()
+end
+
+-- turn index of TR snap points into TR rank
+function getSnapTRValue(index)
+	if index < 5 then return 5
+	elseif index < 25 then return index+1
+	elseif index == 25 then return 25
+	elseif index < 52 then return index-1
+	else return index-52 end
+end
+
+-- turn TR into snap point index
+function getTRSnapIndex(value)
+	if value == 5 then return 1
+	elseif value < 5 then return value+52
+	elseif value <= 25 then return value-1
+	else return value+1
+	end
+end
+
+-- return a list of player cubes representing TR value
+function getTRCubes(pcolor)
+	local board = gftag('Mars')
+	local pos = addPosition(board.getPosition(),{-1,0,0})
+	local size = board.getBoundsNormalized().size
+	local hitList = Physics.cast({
+		origin = pos, type = 3, direction = {0, 1, 0}, size = {size.z,size.y,size.x}, max_distance=2 --, debug=true
+	})
+	local cubes = {}
+	for _,hit in ipairs(hitList) do
+		local obj = hit['hit_object']
+		if obj.hasTag('PlayerCube') and obj.hasTag('c'..pcolor) then table.insert(cubes,obj) end
+	end
+-- 	log(#cubes .. " Würfel gefunden")
+	return cubes
+end
+
+-- return TR value for given player cube depending on its position
+function getCubeTR(cube,pcolor)
+	local pcolor = pcolor or getOwner(cube)
+	local board = gftag('Mars')
+	for i,snap in ipairs(getSnapsWithTag(board,'TR')) do
+		local pos = board.positionToWorld(snap.position)
+		local d = round(distance(pos,cube.getPosition()),1)
+		if d == 0 then return getSnapTRValue(i) end
+	end
+	return 0
+end
+
+-- return current TR rank of given player
+function getTR(pcolor)
+	local cubes = getTRCubes(pcolor)
+	local trvalue = 0
+	for _,cube in ipairs(cubes) do
+		trvalue = trvalue + getCubeTR(cube,pcolor)
+	end
+	return trvalue
+end
+
+-- increase TR rank of given player by given value
+function addTR(pcolor,add)
+	local board = gftag('Mars')
+	local cubes = getTRCubes(pcolor)
+	local ccount = 0
+	local add = add or 1
+	local newTR = math.max(getTR(pcolor) + add,0)
+	while newTR >= 50 do
+		ccount = ccount + 1
+		local cube = cubes[ccount] or getNewPlayerCube(pcolor)
+		local pos = above(getSnapPos(board,'TR',51),ccount)
+		cube.setPosition(pos)
+		newTR = newTR - 50
+	end
+	if newTR > 0 or ccount == 0 then
+		ccount = ccount + 1
+		local cube = cubes[ccount] or getNewPlayerCube(pcolor)
+		local index = getTRSnapIndex(newTR)
+		local pos = above(getSnapPos(board,'TR',index),ccount)
+		cube.setPosition(pos)
+	end
+	if #cubes > ccount then
+		for i=ccount+1,#cubes do cubes[i].destruct() end
+	end
+	Wait.frames(|| printToColor('You have '..getTR(pcolor)..' TR, now', pcolor), 1)
+end
+
+-- alias of addTR
+function incTR(inc, pcolor)
+	addTR(pcolor, inc)
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Phases
+----------------------------------------------------------------------------------------------------------------------------
+-- select and place the phase card of given number for given player
+function selectPhaseCard(player,nr)
+	shufflePhases(player)
+	local pcolor = player.color
+	local pcard = getPhaseCard(pcolor,nr)
+	if not pcard then sendError("Phase Card not found",pcolor) return end
+	local lcard = getLastPhaseCard(pcolor)
+	if lcard == pcard then sendError("You have already chosen this phase last",pcolor) return end
+	local scard = getSeletectedPhaseCard(pcolor)
+	if scard then scard.deal(1,pcolor,HAND_INDEX_PHASE) end
+	if scard == pcard then
+		setReady(pcolor,false)
+	else
+		setReady(pcolor,true)
+		local pboard = gftags({'c'..pcolor,'PlayerBoard'})
+		local pos = above(getSnapPos(pboard,'Phase',2),0.2)
+		pcard.setRotation({0,180,180})
+		pcard.setPosition(pos)
+		Wait.frames(|| checkPhases(),10)
+	end
+end
+
+-- return the phase card given player has played in last round
+function getLastPhaseCard(pcolor)
+	local pboard = gftags({'c'..pcolor,'PlayerBoard'})
+	local pos = getSnapPos(pboard,'Phase',1)
+	local card = getCardsOnPos(pos,1,true)
+	return card
+end
+
+-- return player's currently selected phase card
+function getSeletectedPhaseCard(pcolor)
+	local pboard = gftags({'c'..pcolor,'PlayerBoard'})
+	local pos = getSnapPos(pboard,'Phase',2)
+	local card = getCardsOnPos(pos)
+	return card
+end
+
+-- return player's phase card with given number
+function getPhaseCard(pcolor,nr)
+	return gftags({'c'..pcolor,'Ph'..(nr or '')})
+end
+
+-- shuffle phase cards on player's hand
+function shufflePhases(player)
+	local cards = shuffleList(player.getHandObjects(HAND_INDEX_PHASE))
+	local pht = player.getHandTransform(HAND_INDEX_PHASE)
+    local offSet = pht.scale.x / ( 2 * #cards)
+    for i, c in ipairs(cards) do
+      c.setPosition(pht.position)
+      pht.position.x = pht.position.x + offSet * pht.right.x
+      pht.position.z = pht.position.z + offSet * pht.right.z
+    end
+end
+
+-- reveal phases if all seated players have selected a phase
+function checkPhases()
+	if allPhasesSelected() then 
+		revealPhases()
+	end
+end
+
+-- reveal all phase cards
+function revealPhases()
+	for _,pcolor in ipairs(playersInGame()) do
+		revealPhase(pcolor)
+	end
+	startNextPhase()
+end
+
+-- flip phase and place phase board
+function revealPhase(pcolor)
+	local scard = getSeletectedPhaseCard(pcolor)
+	if not scard then return end
+	if scard.is_face_down then scard.flip() end
+	local nr = getPhaseNr(scard)
+	CURRENT_PHASES[nr] = true
+	setPhaseBoard(nr)
+	callAction(' revealed: ' .. PHASE_NAMES[nr],pcolor)
+end
+
+-- reset phase cards and phase boards
+function newRound()
+	for _,pcolor in ipairs(playersInGame()) do
+		switchPhase(pcolor)
+	end
+	removePhaseBoards()
+end
+
+-- draw last phase card and flip current phase card
+function switchPhase(pcolor)
+	local lcard = getLastPhaseCard(pcolor)
+	local scard = getSeletectedPhaseCard(pcolor)
+	if not scard then sendError("No phase selected",pcolor) return end
+	if lcard then lcard.deal(1,pcolor,HAND_INDEX_PHASE) end
+	local board = gftags({'c'..pcolor,'PlayerBoard'})
+	local pos = getSnapPos(board,'Phase',1)
+	scard.setRotation({0,180,180})
+	scard.setPositionSmooth(pos)
+end
+
+-- check if all players have selected a phase
+function allPhasesSelected()
+	for _,pcolor in ipairs(playersInGame()) do
+		local scard = getSeletectedPhaseCard(pcolor)
+		if not scard or not scard.is_face_down then return false end
+	end
+	return true
+end
+
+-- move phase boards aside
+function removePhaseBoards()
+	for i=1,5 do removePhaseBoard(i) end
+end
+
+-- move phase board of given number aside
+function removePhaseBoard(nr)
+	local board = gftags({'PhaseBoard','Ph'..nr})
+	local pos = getSnapPos(Global,'PhaseBoard',6)
+	if not board.is_face_down then board.setRotation({0,180,180}) end
+	board.setPosition(above(pos,nr))
+	board.removeTag('active')
+end
+
+-- place phase board of given number in the middle to show it has been selected
+function setPhaseBoard(nr)
+	local board = gftags({'PhaseBoard','Ph'..nr})
+	local pos = getSnapPos(Global,'PhaseBoard',nr)
+	board.setPosition(above(pos,1))
+	if not board.hasTag('active') then
+		board.flip()
+		board.addTag('active')
+	end
+end
+
+-- return number of given phase card or board
+function getPhaseNr(card)
+	for nr=1,5 do
+		if card.hasTag('Ph'..nr) then return nr end
+	end
+end
+
+-- return list of currently selected phase boards
+function getActivePhaseBoards()
+	return gtags({'PhaseBoard','active'})
+end
+
+-- return true if player has currently selected phase of given number
+function hasActivePhase(pcolor,nr)
+	local scard = getSeletectedPhaseCard(pcolor)
+	if scard and scard.hasTag('Ph'..nr) then return true
+	else return false end
+end
+
+function startNextPhase()
+	log('Current Phase: ' .. CURRENT_PHASE)
+	for pcolor,state in pairs(READY_STATE) do
+		READY_STATE[pcolor] = false
+	end
+	REACH_TEMP = false
+	REACH_OXY = false
+	REACH_OCEAN = false
+	if CURRENT_PHASE > 0 then CURRENT_PHASES[CURRENT_PHASE] = false end
+	CURRENT_PHASE = getNextPhase()
+	if CURRENT_PHASE == 0 then
+		broadcastToAll('All Phases completed',COL_MSG)
+		setNotes('Choose your Phase')
+		newRound()
+	else
+		doActionPhase()
+		Wait.frames(|| broadcastToAll('New Phase: ' .. PHASE_NAMES[CURRENT_PHASE] ,COL_MSG),100)
+		setNotes("Current Phase: " .. PHASE_NAMES[CURRENT_PHASE])
+	end
+end
+
+function doActionPhase()
+	for _,pcolor in ipairs(playersInGame()) do
+		local projectLimit = gstate(pcolor,'projectLimit')
+
+		if 'Development' == PHASE_NAMES[CURRENT_PHASE] then
+			astate(pcolor, 'projectLimit', -(projectLimit-1))
+		end
+
+		if 'Construction' == PHASE_NAMES[CURRENT_PHASE] then
+			local limit = 1
+			if hasActivePhase(pcolor,2) then limit = 2 end
+
+			astate(pcolor, 'projectLimit', -(projectLimit-limit))
+		end
+
+		--[[
+		if 'Action' == PHASE_NAMES[CURRENT_PHASE] then
+			local activatedCards = gtags({'c'..pcolor, 'Blue', 'activated'})
+			for _,card in pairs(activatedCards) do
+				if CARDS[gnote(card)]['action'] then
+					createProjectActionButton(card)
+				end
+			end
+		end
+
+		if 'Action' != PHASE_NAMES[CURRENT_PHASE] then
+			local activatedCards = gtags({'c'..pcolor, 'Blue', 'activated'})
+			for _,card in pairs(activatedCards) do
+				card.clearButtons()
+			end
+		end
+		]]--
+
+		if 'Production' == PHASE_NAMES[CURRENT_PHASE] then
+			Wait.frames(|| produce(pcolor),150)
+		end
+
+		if 'Research' == PHASE_NAMES[CURRENT_PHASE] then
+			local researchDraw = 2 + gmod(pcolor, 'researchDraw')
+			local researchKeep = 1 + gmod(pcolor, 'researchKeep')
+
+			if hasActivePhase(pcolor, CURRENT_PHASE) then
+				researchDraw = researchDraw + 3
+				researchKeep = researchKeep + 1
+			end
+
+			broadcastToColor('You must keep '..researchKeep..' card(s)', pcolor, 'Orange')
+
+			draw(pcolor, researchDraw)
+		end
+	end
+end
+
+function getNextPhase()
+	for i=CURRENT_PHASE+1,5 do
+		if CURRENT_PHASES[i] then return i end
+	end
+	return 0
+end
+
+function setReady(pcolor,ready)
+	if not SEATED_COLORS[pcolor] then sendError("You are not part of the game!",pcolor) return end
+	READY_STATE[pcolor] = ready
+	updateReadyDisplay()
+end
+
+function updateReadyDisplay()
+	local ready = true
+	local notes = CURRENT_PHASE > 0 and "Current Phase: " .. PHASE_NAMES[CURRENT_PHASE] or ""
+	for pcolor,state in pairs(READY_STATE) do
+		if state then
+			notes = notes .. '\n['..Color[pcolor]:toHex()..']'..playerName(pcolor) .. " is ready"
+		else
+			ready=false
+		end
+	end
+	if ready then
+		if CURRENT_PHASE > 0 then
+			startNextPhase()
+		end
+	else
+		setNotes(notes)
+	end
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Drawing
+----------------------------------------------------------------------------------------------------------------------------
+-- draw given amount of project cards, use alt for alternative hand index
+function draw(pcolor,count,alt)
+	local count = count or 1
+	local sindex = alt and HAND_INDEX_ALT or HAND_INDEX_DRAW
+	if SHUFFLING then Wait.condition(|| draw(pcolor,count,alt),|| not SHUFFLING) return end
+	local deck = getDrawDeck()
+	if not deck then
+		broadcastToAll('Creating new deck. Please wait…',COL_MSG)
+		shuffleNewDeck()
+		Wait.condition(|| draw(pcolor,count,alt),|| not SHUFFLING)
+	elseif deck.name == 'Card' then 
+		deck.deal(1,pcolor,sindex)
+		if count > 1 then
+			shuffleNewDeck()
+			draw(pcolor,count-1,alt)
+		end
+	elseif #deck.getObjects() < count then
+		deck.deal(#deck.getObjects(),pcolor,sindex)
+		shuffleNewDeck()
+		deck.deal(count-#deck.getObjects(),pcolor,sindex)
+	else
+		deck.deal(count,pcolor,sindex)
+	end
+end
+
+-- return project deck
+function getDrawDeck()
+	local dboard = gftag("DrawBoard")
+	local pos = getSnapPos(dboard,'Project')
+	return getCardsOnPos(pos)
+end
+
+-- create new project deck from discard pile
+function shuffleNewDeck()
+	SHUFFLING = true
+	local dboard = gftag("DrawBoard")
+	local pos = getSnapPos(dboard,'Project',2)
+	local cards = getCardsOnPos(pos)
+	if not cards then sendError("Deck not found!") return end
+	Wait.frames(function() SHUFFLING = false end,60)
+	cards.setPosition(above(getSnapPos(dboard,'Project')))
+	cards.flip()
+end
+
+-- discard a project or trash any other card
+function discard(card)
+	if card.hasTag("Project") then
+		card.removeTag('countTag')
+		local dboard = gftag("DrawBoard")
+		local pos = getSnapPos(dboard,'Project',2)
+		card.setRotation({0,180,0})
+		card.setPosition(above(pos,2.5))
+	else
+		trash(card)
+	end
+end
+
+-- discard all cards in player's left hand
+function discardHand(pcolor,selling)
+	local cards = Player[pcolor].getHandObjects(HAND_INDEX_DRAW)
+	local count = (CARD_VALUE + gmod(pcolor, 'cardValue'))*#cards
+	for _,card in ipairs(cards) do
+		discard(card)
+	end
+	if selling and count > 0 then
+		printToColor("Sold cards for "..count.." MC",pcolor)
+		addRes(pcolor,count)
+	end
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Setup
+----------------------------------------------------------------------------------------------------------------------------
+-- setup game with current settings for seated players
+function startGame()
+	local sBoard = gftag("SetupBoard")
+	broadcastToAll('Starting Ares Expedition. Please wait…',COL_MSG)
+	setPlayersInGame()
+	placeOceans()
+	setStartingCorps(sBoard)
+	setStartingProjects(sBoard)
+	removePhaseBoards()
+	Wait.frames(|| sBoard.destruct(),180)
+	GAME_STARTED = true
+	Wait.frames(|| createStandardActionButtons(),100)
+end
+
+-- clean up by removing objects from not seated player colors
+function setPlayersInGame()
+	for i,pcolor in ipairs(PLAYER_COLORS) do
+		if Player[pcolor].seated then 
+			gftags({'c'..pcolor,'PlayerBoard'}).addTag('playing')
+-- 			table.insert(SEATED_COLORS,pcolor]
+		else
+		SEATED_COLORS[pcolor] = nil
+		READY_STATE[pcolor] = nil
+			Wait.frames(function()
+				for _,obj in ipairs(gtag('c'..pcolor)) do
+					obj.setLock(false)
+					trash(obj)
+				end
+			end,10*i)
+		end
+	end
+	for _,zone in ipairs(gtag('Hand')) do
+		local zcolor = zone.getData().FogColor
+		if not Player[zcolor].seated then zone.destruct() end
+	end
+end
+
+-- deal coorporations to players
+function setStartingCorps(sBoard)
+	local index = sBoard.getVar('BeginnerCorporations') and 2 or 1
+	local corpCount = sBoard.getVar('BeginnerCorporations') and 1 or 2
+	local pos = getSnapPos(sBoard,'Corporation',index)
+	local cards = getCardsOnPos(pos)
+	if sBoard.getVar('PromoCorporations') then
+		cards.putObject(getCardsOnPos(getSnapPos(sBoard,'Corporation',3)))
+	end
+	if not sBoard.getVar('BeginnerCorporations') then
+		cards.putObject(getCardsOnPos(getSnapPos(sBoard,'Corporation',2)))
+	end
+	Wait.frames(|| cards.shuffle(),50)
+	for _,pcolor in ipairs(playersInGame()) do
+		Wait.frames(|| cards.deal(corpCount,pcolor,HAND_INDEX_CORP),100)
+		Wait.frames(|| broadcastToColor("["..Color.Orange:toHex().."]Setup[ffffff]: Please pick a corporation.",pcolor),100)
+		Wait.frames(|| printToColor("Activate a corporation in your hand by clicking on the green button. Right click to discard any other corporation.",pcolor),100)
+	end
+	Wait.frames(function()
+		for _,obj in ipairs(gtag("Corporation")) do
+			if distance(obj,sBoard) < 10 then trash(obj) end	
+		end
+	end,120)
+end
+
+-- deal starting projects to players
+function setStartingProjects(sBoard)
+	local ccount = 8
+	local bcount = 16
+	local cards = getCardsOnPos(getSnapPos(sBoard,'Project',1))
+	local bcards = getCardsOnPos(getSnapPos(sBoard,'Project',2))
+	if sBoard.getVar('BeginnerProjects') then
+		bcards.shuffle()
+		for _,pcolor in ipairs(playersInGame()) do
+			bcards.deal(4,pcolor,HAND_INDEX_ALT)
+			bcount = bcount - 4
+		end
+		ccount = 4
+	else
+		cards.putObject(bcards)
+	end
+	if sBoard.getVar('PromoProjects') then
+		Wait.frames(|| cards.putObject(getCardsOnPos(getSnapPos(sBoard,'Project',3))),10)
+	else
+		trash(getCardsOnPos(getSnapPos(sBoard,'Project',3)))
+	end
+	Wait.frames(|| cards.flip(),50)
+	Wait.frames(|| cards.shuffle(),80)
+	for _,pcolor in ipairs(playersInGame()) do
+		Wait.frames(|| cards.deal(ccount,pcolor,HAND_INDEX_ALT),90)
+	end
+	
+	local dboard = gftag("DrawBoard")
+	local pos = getSnapPos(dboard,'Project')
+	Wait.frames( || cards.setPositionSmooth(above(pos)),160 )
+	if bcount > 0 and bcount < 16 then
+		local bcards = getCardsOnPos(getSnapPos(sBoard,'Project',2))
+		local pos = getSnapPos(dboard,'Project',2)
+		Wait.frames( || bcards.setPositionSmooth(above(pos)),160 )
+	end
+end
+
+-- shuffle and place ocean tiles on Mars
+function placeOceans()
+	local oceans = shuffleList(gtag('Ocean'))
+	local mboard = gftag('Mars')
+	local rot = addPosition(mboard.getRotation(),{0,90,180})
+	for index,ocean in ipairs(oceans) do
+		local snap = findSnapOnObj(mboard,'Ocean',index)
+		if snap then
+			local pos = mboard.positionToWorld(snap.position)
+			Wait.frames(|| ocean.setPosition(above(pos)),5*index)
+			ocean.setRotation(rot)
+		end
+	end
+end
+
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Misc
+----------------------------------------------------------------------------------------------------------------------------
+function getCardsOnPos(pos,distance,faceDown)
+	local pos = above(pos,-0.5)
+	local hitList = Physics.cast({
+		origin = pos, direction = {0, 1, 0}, max_distance = distance or 1
+	})
+-- 	log(#hitList..' hits')
+	for i = 1,#hitList,1 do
+		local obj = hitList[i]['hit_object']
+		if obj.name == 'Deck' or obj.name == 'Card' then
+			if not faceDown or (faceDown == obj.is_face_down) then
+				return obj
+			end
+		end
+	end
+	return nil
+end
+
+-- put obj into the game box
+function trash(obj)
+	local box = gftag("GameBox")
+	if box then box.putObject(obj)
+	else obj.destruct() end
+end
+
+-- return player color that owns given object
+function getOwner(obj)
+	for _,pcolor in ipairs(PLAYER_COLORS) do
+		if obj.hasTag('c'..pcolor) then return pcolor end
+	end
+	return nil
+end
+
+-- return list of player colors in game (does not depend on seat)
+function playersInGame()
+	local pcolors = {}
+	for pcolor,seated in pairs(SEATED_COLORS) do
+		if seated then table.insert(pcolors,pcolor) end
+	end
+	return pcolors
+end
+
+-- returns steam name or color if player is not seated at the moment
+function playerName(pcolor)
+	return Player[pcolor].steam_name or pcolor
+end
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Events
+----------------------------------------------------------------------------------------------------------------------------
+function onObjectEnterZone(zone, object)
+    if zone.getVar('onObjectEnter') then
+      zone.call('onObjectEnter', object)
+    end
+end
+
+function onObjectLeaveZone(zone, object)
+    if zone.getVar('onObjectLeave') then
+      zone.call('onObjectLeave', object)
+    end
+end
+
+function onObjectSpawn(obj)
+	-- create button on corps whenver they spawn
+    if obj.hasTag("Corporation") then
+    	if not obj.hasTag("activated") then
+    		createActivateCorpButton(obj)
+    	end
+    end
+
+	if obj.hasTag('Project') then
+		if not obj.hasTag("activated") then
+			createActivateProjectButton(obj)
+    	end
+	end
+end
+
+function tryObjectEnterContainer(container, obj)
+	-- make sure phase cards cannot form or enter a deck
+	if container.hasTag('GameBox') then return true end
+    if obj.hasTag("Phase") then return false end
+    if obj.hasTag('Corporation') != container.hasTag('Corporation') then return false end
+    if obj.hasTag('Project') != container.hasTag('Project') then return false end
+    return true
+end
+
+function onPlayerConnect(player)
+	if not player.promoted then player.promote() end
+end
+
+function onObjectPickUp(pcolor,obj)
+	if obj.hasTag('countTag') then return end
+	if obj.hasTag('Project') or obj.hasTag('Coorporation') then
+		obj.addTag('countTag')
+	end
+end
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH UI functions
+----------------------------------------------------------------------------------------------------------------------------
+function ui_draw(player,click,id)
+	if not GAME_STARTED then sendError("Game has not started yet",player.color) return end
+	for i=1,5 do
+		if id == "DrawButton"..i then
+			draw(player.color,i,click != '-1')
+			return
+		end
+	end
+end
+
+function ui_phase(player,click,id)
+	if not GAME_STARTED then sendError("Game has not started yet",player.color) return end
+	if #getActivePhaseBoards() > 0 then sendError("Start new round before selecting new phase",player.color) return end
+	for i=1,5 do
+		if id == "PhaseButton"..i then
+			selectPhaseCard(player,i)
+			return
+		end
+	end
+end
+
+function ui_discard(player,click,id)
+	discardHand(player.color,id == 'HandSellButton')
+end
+
+-- function ui_shuffle(player,click,id)
+-- 	shufflePhases(player)
+-- end
+
+function ui_nextRound(player,click,id)
+	if not GAME_STARTED then sendError("Game has not started yet",player.color) return end
+	if CURRENT_PHASE != 0 then sendError("Complete all phases to start a new round",player.color) return end
+	newRound()
+end
+
+function ui_production(player,click,id)
+	if not GAME_STARTED then sendError("Game has not started yet",player.color) return end
+	if CURRENT_PHASE != 4 and click == '-1' then sendError("You may only produce during the production phase (right click to ignore)",player.color) return end
+	produce(player.color)
+end
+
+function ui_ready(player,click,id)
+	local pcolor = player.color
+	if not GAME_STARTED then sendError("Game has not started yet",pcolor) return end
+	if CURRENT_PHASE == 0 then sendError("All players need to select a phase card first",pcolor) return end
+	if not SEATED_COLORS[pcolor] then sendError("You are not part of the game!",pcolor) return end
+	setReady(pcolor,not READY_STATE[pcolor])
+end
+
+function initTagCounterUI()
+	local field = { tag = "Text", attributes = {id="counterText", outline="#000000", outlineSize="9", color="#FFFFFF", rotation="0 0 180", position="0 0 -11", text="", fontSize="200", width="1000", height="500"}
+	}
+	for _,counter in ipairs(gtag('TagCounter')) do
+		counter.UI.setXmlTable({field})
+	end
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Messaging
+----------------------------------------------------------------------------------------------------------------------------
+function sendError(text,pcolor)
+	local text = "Error – "..text
+	if pcolor then broadcastToColor(text,pcolor,COL_ERR)
+	else broadcastToAll(text,COL_ERR)
+	end
+end
+
+function callAction(text,pcolor)
+	broadcastToAll('['..Color[pcolor]:toHex()..']'..playerName(pcolor) .. "[FFFFFF]" .. text)
+end
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Utility
+----------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------- Utility: GUID
+-- return object with given guid
+function gguid(guid)
+	return getObjectFromGUID(guid)
+end
+gg = gguid
+
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------- Utility: Obj Info
+function gnote(obj)
+	if type(obj) == 'userdata' then
+		return obj.getGMNotes() or ""
+	elseif type(obj) == 'table' then
+		return obj.gm_notes
+	elseif type(obj) == 'string' then
+		if gguid(obj) then return gguid(obj).getGMNotes() end
+	else return ""
+	end
+end
+
+function snote(obj,note)
+	if obj then obj.setGMNotes(note) end
+end
+
+function gname(card)
+	local name = gnote(card)
+	return CARDS[name] and CARDS[name].name or name
+end
+
+function gcard(pcolor,name)
+	local cards = gtags({'c'..pcolor,'Project'})
+	for _,card in pairs(cards) do
+		if name == gnote(card) then
+			return card
+		end
+	end
+end
+
+function gowner(card)
+	for _,color in pairs(PLAYER_COLORS) do
+		if card.hasTag('c'..color) then
+			return color
+		end
+	end
+
+	return nil
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------- Utility: Tags
+-- return objects with given tag
+function gtag(tag)
+	return getObjectsWithTag(tag)
+end
+
+-- return objects with given tags
+function gtags(tags)
+	if type(tags) == 'String' then return gtag(tags) end
+	return getObjectsWithAllTags(tags)
+end
+
+-- return objects with given tag
+function gftag(tag)
+	local objs = gtag(tag)
+	if #objs > 0 then return objs[1] else return nil end
+end
+
+-- return objects with given tag
+function gftags(tags)
+	if type(tags) == 'String' then return gftag(tags) end
+	local objs = gtags(tags)
+	if #objs > 0 then return objs[1] else return nil end
+end
+
+-- has given object reference given tag
+function hasTagInRef(ref, stag)
+	for _, ctag in ipairs(ref.tags) do
+		if ctag == stag then return true end
+	end
+	return false
+end
+
+-- has given object reference given tags
+function hasTagsInRef(ref, stags)
+	for _, stag in ipairs(stags) do
+		if not hasTagInRef(ref, stag) then return false end
+	end
+	return true
+end
+
+-- return the count of a tag for a specific player
+function getTagCount(tag, pcolor)
+	local counter = gtags({'TagCounter', 'c'..pcolor, tag})
+	local value = counter[1].UI.getAttribute('counterText', 'text')
+	return tonumber(value)
+end
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------- Utility: Snap Points
+-- return snap points of given object
+function gsnaps(obj)
+	return obj.getSnapPoints()
+end
+
+-- copy snap points of given object to var
+function csnaps(obj)
+	TEMP_SNAPS = obj.getSnapPoints()
+end
+
+-- paste snap points from var to given object
+function psnaps(obj)
+	obj.setSnapPoints(TEMP_SNAPS or {})
+end
+
+function getSnapPos(obj,stag,index)
+	local pos = findSnapOnObj(obj,stag,index).position
+	return obj.positionToWorld(pos)
+end
+
+function getSnapRot(obj,stag,index)
+	local rot = findSnapOnObj(obj,stag,index).rotation
+	return addPosition(rot,obj.getRotation())
+end
+
+-- find snap point with given tag and given index on obj
+function findSnapOnObj(obj,stag,index)
+	if not obj then sendError("Missing Object") return {position={0,10,0}} end
+	local snaps = obj.getSnapPoints()
+	local n = 0
+	local index = index or 1
+	for s,snap in ipairs(snaps) do
+		if hasTagInRef(snap,stag) then
+			n = n + 1
+			if n == index then return snap end
+		end
+	end
+	return nil
+end
+
+-- find snap point with given tags and given index on obj
+function findSnapsOnObj(obj,stags,index)
+	local snaps = obj.getSnapPoints()
+	local n = 0
+	local index = index or 1
+	for s,snap in ipairs(snaps) do
+		if hasTagsInRef(snap,stags) then
+			n = n + 1
+			if n == index then return snap end
+		end
+	end
+	return nil
+end
+
+-- return all snap points on obj with given tag
+function getSnapsWithTag(obj,stag)
+	local snaps = {}
+	for s,snap in ipairs(obj.getSnapPoints()) do
+		if hasTagInRef(snap,stag) then
+			table.insert(snaps,snap)
+		end
+	end
+	return snaps
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------- Utility: Lists
+-- check if list contains given element
+function contains(list,obj)
+	for _,entry in pairs(list) do
+		if entry == obj then return true end
+	end
+	return false
+end
+
+-- check if list contains given element
+function containsKey(list,key)
+	for entry,_ in pairs(list) do
+		if entry == key then return true end
+	end
+	return false
+end
+
+-- shuffle given list
+function shuffleList(list)
+	for i = #list, 2, -1 do
+		local j = math.random(i)
+		list[i], list[j] = list[j], list[i]
+	end
+	return list
+end
+
+function shuffleObjectList(list)
+	local keys = {}
+	for key,entry in pairs(list) do
+		table.insert(keys,key)
+	end
+	keys = shuffleList(keys)
+	local shuffledList = {}
+	for _,key in ipairs(keys) do
+		shuffledList[key] = list[key]
+	end
+	return shuffledList
+end
+
+-- return random element from given list
+function getRandomElement(list)
+	for i=1,3 do math.random() end
+	if list == nil or #list == 0 then return nil end
+	return list[math.random(#list)]
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------- Utility: Positions & Maths
+-- above given pos
+function above(pos,z)
+	local z = z or 1
+	return {pos[1],pos[2]+z,pos[3]}
+end
+
+function addPosition(pos1,pos2)
+	return {pos1[1]+pos2[1],pos1[2]+pos2[2],pos1[3]+pos2[3]}
+end
+
+function multPosition(pos1,pos2)
+	return {pos1[1]*pos2[1],pos1[2]*pos2[2],pos1[3]*pos2[3]}
+end
+
+-- return horizontal distance between given positions
+function distance(a,b)
+	local a = type(a) == 'userdata' and a.getPosition() or a
+	local b = type(b) == 'userdata' and b.getPosition() or b
+	return math.sqrt((a[1]-b[1])*(a[1]-b[1]) + (a[3]-b[3])*(a[3]-b[3]))
+end
+
+function movePosition(obj,pos)
+	local pos = addPosition(obj.getPosition(),pos)
+	obj.setPosition(pos)
+end
+
+-- round to x decimal places
+function round(num, numDecimalPlaces)
+  local mult = 10^(numDecimalPlaces or 0)
+  return math.floor(num * mult + 0.5) / mult
+end
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------- Utility: Modding functions
+
+function rcscript()
+	for _,obj in ipairs(gtag('TagCounter')) do
+	end
+end
+
+function dummy(player,click,id)
+	broadcastToAll("Not implemented yet")
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Projects
+----------------------------------------------------------------------------------------------------------------------------
+-- return project card color (green, blue, red)
+function getProjColor(card)
+	for _,color in ipairs(PROJ_COLORS) do
+		if card.hasTag(color) then
+			return color
+		end
+	end
+	return nil
+end
+
+function getColorCount(pcolor, color)
+	local cards = gtags({'c'..pcolor, color})
+	return #cards
+end
+
+function playCardOnBoard(pcolor, card)
+	local board = gftags({'c'..pcolor,'PlayerBoard'})
+
+	local cards = gtags({'c'..pcolor, getProjColor(card), 'activated'})
+	local count = 1
+	if cards ~= nil then
+		count = #cards + 1
+	end
+
+	local pos = getSnapPos(board, getProjColor(card), count)
+	card.setPosition(above(pos,0.7))
+	card.addTag('c'..pcolor)
+	card.addTag('activated')
+	card.clearButtons()
+
+	Wait.frames(|| card.setLock(true),40)
+	Wait.frames(|| playTag(pcolor, card), 50)
+end
+
+-- check player's cost mods and return final MC cost of given card
+function getCost(card,pcolor)
+	local data = CARDS[gnote(card)] or {}
+	local cost = data.cost or 0
+	if cost >= 20 then 
+		cost = cost + gmod(pcolor,'payTwenty')
+	end
+	
+	for _,symbol in ipairs(SYMBOLS) do
+		if card.hasTag(symbol) then
+			cost = cost + gmod(pcolor,'pay'..symbol)
+
+			if 'Building' == symbol then
+				cost = cost - (getProduction(pcolor, 'Steel') * (STEEL_VALUE + gmod(pcolor,'steelValue')))
+			end
+	
+			if 'Space' == symbol then
+				cost = cost - (getProduction(pcolor, 'Titan') * (TITAN_VALUE + gmod(pcolor,'titanValue')))
+			end
+		end
+	end
+	
+	cost = cost + gmod(pcolor,'pay'..getProjColor(card))
+	cost = cost + gmod(pcolor,'payCard')
+	cost = cost + gmod(pcolor,'payCardTemp')
+
+	if hasActivePhase(pcolor,1) and 1 == CURRENT_PHASE then cost = cost - 3 end
+
+	if cost < 0 then cost = 0 end
+
+	return cost
+end
+
+-- check base cost project
+function getBaseCost(card, pcolor)
+	local data = CARDS[gnote(card)] or {}
+	return data.cost or 0
+end
+
+function fulfillConditions(conditions, pcolor)
+	for element,condition in pairs(conditions) do
+		if not fulfillCondition(element, condition, pcolor) then
+			sendError(getConditionError(element, condition, pcolor), pcolor)
+			return false
+		end
+	end
+
+	return true
+end
+
+function fulfillCondition(element, condition, pcolor)
+	if containsKey(TERRAFORMING_RANGES, element) then
+		local value = _G['get'..element]()
+		local bound = condition.bound
+		local puffer = gmod(pcolor, 'conditionPuffer') + gmod(pcolor, 'conditionPufferTemp')
+		if puffer > 1 then puffer = 1 end
+		local rangeIndex = RANGE_INDEX[condition.range]
+
+		if 'Lower' == bound then
+			if rangeIndex > 1 then rangeIndex = rangeIndex - puffer end
+			local rangeName = RANGE_NAME[rangeIndex]
+			local range = TERRAFORMING_RANGES[element][rangeName]
+			return value >= range.min
+		elseif 'Upper' == bound then
+			if rangeIndex < 4 then rangeIndex = rangeIndex + puffer end
+			local rangeName = RANGE_NAME[rangeIndex]
+			local range = TERRAFORMING_RANGES[element][rangeName]
+			return value <= range.max
+		end
+	end
+
+	if 'Ocean' == element then
+		local value = #getOceans()
+		local limit = condition.value
+		local bound = condition.bound
+
+		if 'Lower' == bound then
+			return value >= limit
+		elseif 'Upper' == bound then
+			return value <= limit
+		end
+	end
+
+	if 'TR' == element then
+		local value = getTR(pcolor)
+		local limit = condition
+
+		return value >= limit
+	end
+
+	if 'Symbol' == element then
+		local symbolValid = true
+
+		for symbol,value in pairs(condition) do
+			local current = getTagCount(symbol, pcolor)
+			if value > current then symbolValid = false end
+		end
+
+		return symbolValid
+	end
+
+	if 'Resources' == element then
+		local resValid = true
+
+		for res,value in pairs(condition) do
+			local current = getRes(pcolor, res)
+			if value > current then resValid = false end
+		end
+
+		return resValid
+	end
+end
+
+function getConditionError(element, condition, pcolor)
+	local colorError = Color.new(COL_ERR[1],COL_ERR[2],COL_ERR[3]):toHex()
+	local error = 'The '..element..' condition is not met: '
+
+	if containsKey(TERRAFORMING_RANGES, element) then
+		local colorRange = Color.fromString(condition.range):toHex()
+		error = error .. '['..colorRange..']'..condition.range..'['..colorError..']'
+
+		if 'Lower' == condition.bound then
+			return error..' or higher'
+		elseif 'Upper' == condition.bound then
+			return error..' or lower'
+		end
+	end
+
+	if 'Ocean' == element then
+		error = error..condition.value
+
+		if 'Lower' == condition.bound then
+			return error..' or higher'
+		elseif 'Upper' == condition.bound then
+			return error..' or lower'
+		end
+	end
+
+	if 'TR' == element then
+		return error..condition..' or higher'
+	end
+
+	if 'Symbol' == element then
+		symbols = ''
+		count = 0
+
+		for symbol,value in pairs(condition) do
+			local current = getTagCount(symbol, pcolor)
+			if value > current then
+				count = count + 1
+				symbols = symbols..' ('..value..' '..symbol..')'
+			end
+		end
+
+		local verb = 'is'
+		if count > 1 then verb = 'are' end
+		return 'The following symbol(s) condition '..verb..' not met:'..symbols
+	end
+
+	if 'Resources' == element then
+		resources = ''
+		count = 0
+
+		for res,value in pairs(condition) do
+			local current = getRes(pcolor, res)
+			if value > current then
+				count = count + 1
+				resources = resources..' ('..value..' '..res..')'
+			end
+		end
+
+		local verb = 'is'
+		if count > 1 then verb = 'are' end
+		return 'The following resource(s) condition '..verb..' not met:'..resources
+	end
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Tokens
+----------------------------------------------------------------------------------------------------------------------------
+function getTokenCount(card)
+	local name = gnote(card)
+	local data = CARDS[name]
+	local tokens = gtags({data.tokenType..'Token','OwnedBy'..name})
+	local tokenCount = 0
+
+	local stack = nil
+	local stackPresent = false
+	for _,token in pairs(tokens) do
+		if 'Custom_Token_Stack' == token['name'] then
+			stackPresent = true
+			stack = token
+		end
+	end
+
+	if stackPresent then
+		tokenCount = stack.getQuantity() + 1
+	else
+		tokenCount = #tokens
+	end
+
+	return tokenCount
+end
+
+function selectTokenHolder(pcolor, tokenTypes)
+	if 'string' == type(tokenTypes) then
+		tokenTypes = {tokenTypes}
+	end
+
+	for _,tokenType in pairs(tokenTypes) do
+		local cards = gtags({'c'..pcolor, tokenType..'Holder'})
+		for _,card in pairs(cards) do
+			createProjectTokenButton(card)
+		end
+	end
+end
+
+function createProjectTokenButton(card)
+	local data = CARDS[gnote(card)]
+
+	if data.tokenType then
+		card.createButton({
+			click_function="activateProjectToken", position={-0.62,0.6,0}, height=300, width=350,
+			color={0,1,0,0.9}, scale={1,1,1}, tooltip=data.tokenType
+		})
+		card.addTag('buttonTokenActivated')
+	end
+end
+
+function activateProjectToken(card, pcolor, alt)
+	addToken(card, 1)
+	card.clearButtons()
+end
+
+function addToken(card, add)
+	local add = add or 1
+	local pcolor = gowner(card)
+	local name = gnote(card)
+	local data = CARDS[name]
+	local tokenType = data['tokenType']
+	local trueTokenType = tokenType
+
+	if tokenType == 'Science' then trueTokenType = 'Microbe' end
+
+	local bag = gftags({'c'..pcolor,trueTokenType..'Bag'})
+	local tokenPos = card.positionToWorld({0.62,0.6,-1.02})
+
+	for i=1,add do
+		local newToken = bag.takeObject()
+		newToken.addTag('c'..pcolor)
+		newToken.addTag(tokenType..'Token')
+		newToken.addTag('OwnedBy'..name)
+		newToken.setPosition(tokenPos)
+	end
+
+	local cards = gtags({'c'..pcolor,'buttonTokenActivated'})
+	for _,unused_card in pairs(cards) do
+		unused_card.removeTag('buttonTokenActivated')
+		unused_card.clearButtons()
+	end
+	
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH Effects + Production
+----------------------------------------------------------------------------------------------------------------------------
+-- payEarth				pay +x MC for card with Earth tag → similar for other tags
+-- payTwenty			pay +x MC for card with <=20 cost
+-- payGreen				pay +x MC for green projects → simalr for blue and red
+-- plantForest			spend x less plants for forests
+-- HeatAsMC			spend heat as MC
+-- titanValue				titan is worht +x MC
+-- researchDraw		on research draw +x cards
+-- researchKeep		on research keep +x cards
+-- conditionPuffer		ignore one oxygen/temperature condition level
+
+-- onPlayTag			when playing card with given tag, trigger cards with that event	
+-- onPlaySteelProduction		trigger when playing card with this production
+-- onOceanFlip						triggered when ocean is flipped by the player
+	-- TR → gain TR
+
+function playTag(pcolor,card)
+	for _,tag in pairs(card.getTags()) do
+		local mod = 0
+		if string.sub(tag, -1) == '2' then tag = string.sub(tag, 1, -2) end
+		if contains(SYMBOLS, tag) or contains(PROJ_COLORS, tag) then
+			mod = gmod(pcolor, 'onPlay'..tag)
+		end
+		if 'Project' == tag then
+			mod = gmod(pcolor, 'onPlayCard')
+		end
+		
+		if 'number' != type(mod) then
+			onPlay(pcolor,mod)
+		end
+	end
+	
+	local data = CARDS[gnote(card)]
+	amodList(pcolor, data.afterEffects or {})
+end
+
+function geffects(pcolor)
+	local state = pcolor == 'Red' and E_RED 
+			or	pcolor == 'Blue' and E_BLUE
+			or	pcolor == 'Yellow' and E_YELLOW
+			or	pcolor == 'Green' and E_GREEN or {}
+	
+	if not state.effect then state.effect = {} end
+	
+	return state.effect or {}
+end
+
+function gmod(pcolor,effect)
+	local effects = geffects(pcolor)
+	return effects[effect] or 0
+end
+
+function amod(pcolor,effect,add)
+	local effects = geffects(pcolor)
+	if 'number' == type(add) then
+		effects[effect] = (effects[effect] or 0) + (add or 1)
+	else
+		local onPlay = effects[effect] or {}
+		for res,value in pairs(add) do
+			if 'number' == type(value) then
+				onPlay[res] = (onPlay[res] or 0) + (value or 1)
+			else
+				local tableToken = onPlay[res] or {}
+				table.insert(tableToken, value)
+				onPlay[res] = tableToken
+			end
+		end
+		effects[effect] = onPlay
+	end
+end
+
+function amodList(pcolor, list)
+	for effect, value in pairs(list) do
+		amod(pcolor,effect,value)
+	end
+end
+
+function gproductions(pcolor)
+	local state = pcolor == 'Red' and E_RED 
+			or	pcolor == 'Blue' and E_BLUE
+			or	pcolor == 'Yellow' and E_YELLOW
+			or	pcolor == 'Green' and E_GREEN
+	
+	if not state.production then state.production = {} end
+
+	return state.production
+end
+
+function gprod(pcolor, prod)
+	local productions = gproductions(pcolor)
+	return productions[prod] or {}
+end
+
+function aprod(pcolor, prod, data)
+	local productions = gproductions(pcolor)
+	productions[prod] = data
+end
+
+function gstates(pcolor)
+	local state = pcolor == 'Red' and E_RED 
+			or	pcolor == 'Blue' and E_BLUE
+			or	pcolor == 'Yellow' and E_YELLOW
+			or	pcolor == 'Green' and E_GREEN
+	
+	if not state.state then state.state = {} end
+
+	return state.state
+end
+
+function gstate(pcolor,state)
+	local states = gstates(pcolor)
+	return states[state] or 0
+end
+
+function astate(pcolor,state,add)
+	local states = gstates(pcolor)
+	states[state] = (states[state] or 0) + (add or 1)
+end
+
+function astateList(pcolor, list)
+	for state, value in pairs(list) do
+		astate(pcolor,state,value)
+	end
+end
+----------------------------------------------------------------------------------------------------------------------------
+-- 					CH DATA
+----------------------------------------------------------------------------------------------------------------------------
+
+CARDS = {
+--  Coporations: Beginner
+InterplanetaryCinematics = {name = 'InterplanetaryCinematics', MC=46, SteelProduction=1, effects={payEvent=-2} },
+Helion = {MC=28, HeatProduction=3, effects={heatAsMC=1} }, -- todo
+Teractor = {MC=51, effects={payEarth=-3}},
+Ecoline = {MC=27, PlantProduction=1, effects={plantForest=-1}},
+-- Corporations: Standard
+Inventrix = {MC=33,Cards=3,effects={conditionPuffer=1}}, -- todo
+UnitedNationsMarsInitiative = {name='United Nations Mars Initiative',MC=35,effects={}},	-- 6 MC → TR on first time/phase
+SaturnSystems = {name='Saturn Systems',MC=24, TitanProduction=1,effects={onPlayJovian={TR=1}}}, -- todo
+ThorGate = {MC=45, HeatProduction=1, effects={payPower=-3}},
+PhoboLog = {MC=20, TitanProduction=1, effects={titanValue=1} },
+TharsisRepublic = {name='Tharsis Republic', MC=40, effects={researchDraw=1,researchKeep=1}},
+CrediCor = {MC=48, effects={payTwenty=-4} },
+MiningGuild = {name='Mining Guild', MC=27, SteelProduction=1, effects={onPlaySteelProduction={TR=1}}}, -- todo
+-- Corporations: Promo
+Arklight = {MC=43, Animals=2, vpAnimals=0.5, onPlayPlant={Animal=1}, onPlayAnimal={Animal=1} },
+DevTechs = {MC=40, effects={payGreen=-2}, drawChoice=5, manually='Choose a green card from your left hand and discard the other cards.' },
+LaunchStarIncorporated = {name='Launch Star Incorporated', MC=36, effects={payBlue=-3}, revealCards={Color='Blue'}},
+Celestior = {MC=50, action='todo',  },
+MaiNiProductions = {name='Mai-Ni Productions', MC=48, onPlayGreen={Cards=1,manually='Discard a card'}, manually='Play a card from your hand that costs 12 MC or less without paying it.' },
+Zetasel = {MC=43, Cards=5, manually='Discard 4 cards', effects={onOcean={MC=2,Plant=2}}},
+-- Cards: Beginner Projects
+AcquiredCompany = {name='Acquired Company', cost=11, production={Cards={Static=1}}},
+AsteroidMiningConsortium = {name='Asteroid Mining Consortium', cost=6, production={Titan={Static=1}}},
+ImportOfAdvancedGHG = {name='Import of Advanced GHG', cost=8, production={Heat={Static=2}}},
+Lichen = {name='Lichen', cost=5, production={Plant={Static=1}}},
+IndustrialFarming = {name='Industrial Farming', cost=19, production={MC={Static=1}, Plant={Static=2}}},
+ArtificialPhotosynthesis = {name='Artificial Photosynthesis', cost=11, production={Plant={Static=1}, Heat={Static=1}}},
+EconomicGrowth = {name='Economic Growth', cost=10, production={MC={Static=3}}},
+SoilWarming = {name='Soil Warming', cost=24, production={Plant={Static=2}}, instant={Temperature=1}},
+SpaceHeaters = {name='Space Heaters', cost=11, production={Heat={Static=2}}, instant={Cards=1}},
+TradingPost = {name='Trading Post', cost=11, production={MC={Static=2}}, instant={Plant=3}},
+Microprocessors = {name='Microprocessors', cost=17, production={Heat={Static=3}}, instant={Cards=2}, manually='Discard a card (from any hand)'},
+CoalImports={name='Coal Imports', cost=13, production={Heat={Static=3}}},
+Sponsors={name='Sponsors', cost=5, production={MC={Static=2}}},
+NewPortfolios={name='New Portfolios', cost=14, production={MC={Static=1},Plant={Static=1},Heat={Static=1}}},
+GreatEscarpmentConsortium = {name='Great Escarpment Consortium', cost=3, production={Steel={Static=1}}},
+NitrophilicMoss = {name='Nitrophilic Moss', cost=14, production={Plant={Static=2}}},
+-- Cards: Kickstarter Promo Projects
+ProcessedMetals = {name='Processed Metals', cost=27, production={Titan={Static=2}}, instant={Cards={Symbol={Power=1}}}, vp=1},
+DiverseHabitats = {name='Diverse Habitats', cost=8, production={MC={Symbol={Animal=1,Plant=1}}}},
+Laboratories = {name='Laboratories', cost=8, production={Cards={Symbol={Science=0.34}}}},
+CommercialImports = {name='Commercial Imports', cost=36, production={Cards={Static=1}, Heat={Static=2}, Plant={Static=2}}},
+ProcessingPlant = {name='Processing Plant', cost=19, production={Steel={Static=2}}, revealCards={Symbol='Building'}, vp=1},
+SelfReplicatingBacteria = {name='Self-Replicating Bacteria', cost=8}, -- action: add microbe or -5 microbe for -25MC on a card
+MatterGenerator = {name='Matter Generator', cost=13, instant={Cards=2}}, -- action: discard a card for 6 mc
+ProgressivePolicies = {name='Progressive Policies', cost=8, action={cost={MC={base=10,reductionCondition={Event=4},reductionVal=5}},profit={Oxygen=1}}},
+FilterFeeders = {name='Filter Feeders', cost=9, tokenType='Animal', req={Ocean={value=2,bound='Lower'}}}, -- 1vp per 3animals, effect: when adding microbe to another card, add animal to this one
+SyntheticCatastrophe = {name='Synthetic Catastrophe', cost=0}, -- return another red card to the hand
+AssortedEnterprises = {name='Assorted Enterprises', cost=2, state={projectLimit=1}, effects={playGreenDuringConstruction=1,payCardTemp=-2}},
+-- Cards
+CommercialDistrict = {name='Commercial District', cost=25, production={MC={Static=4}}, vp=2},
+IceAsteroid = {name='Ice Asteroid', cost=21, instant={Ocean=2}},
+TundraFarming = {name='Tundra Farming', cost=12, production={MC={Static=2},Plant={Static=1}}, instant={Plant=1}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
+ImportedHydrogen = {name='Imported Hydrogen', cost=17, instant={Ocean=1}}, -- gain 3 plants, or 3 microbes, or 2 animals
+IoMiningIndustries = {name='Io Mining Industries', cost=37, production={MC={Static=1},Titan={Static=2}}}, -- 1VP per (Jovian Badge)
+Herbivores = {name='Herbivores', cost=25, tokenType='Animal', effects={onOcean={Token={where='Herbivores'}},onTemperature={Token={where='Herbivores'}},onOxygen={Token={where='Herbivores'}}}, req={Ocean={value=5,bound='Lower'}}, vp={token=0.5}},
+PhysicsComplex = {name='PhysicsComplex', cost=5, tokenType='Science', effects={onTemperature={Token={where='PhysicsComplex'}}}, req={Symbol={Science=4}}, vp={token=0.5}},
+NoctisFarming = {name='Noctis Farming', cost=13, production={Plant={Static=1}}, instant={Plant=2}, req={Temperature={range='Red',bound='Lower'}}, vp=1},
+DiversifiedInterests = {name='Diversified Interests', cost=15, production={Plant={Static=1}}, instant={Plant=3,Heat=3}},
+Smelting = {name='Smelting', cost=28, production={Heat={Static=5}}, instant={Cards=2}},
+AdaptationTechnology = {name='Adaptation Technology', cost=12, effects={conditionPuffer=1}, vp=1},
+QuantumExtractor = {name='Quantum Extractor', cost=16, production={Heat={Static=3}}, req={Symbol={Science=3}}, vp=2},
+DeimosDown = {name='Deimos Down', cost=30, instant={Temperature=3,MC=7}},
+NaturalPreserve = {name='Natural Preserve', cost=12, production={MC={Static=2}}, req={Oxygen={range='Red',bound='Lower'}}, vp=1},
+LunarBeam = {name='Lunar Beam', cost=9, production={Heat={Static=4}}, instant={TR=-1}, req={TR=1}},
+HydroElectricEnergy = {name='Hydro-Electric Energy', cost=11, action={cost={MC=1},profit={Heat=2},profitBonus={Heat=1}}},
+Mangrove = {name='Mangrove', cost=12, instant={Forest=1}, req={Temperature={range='White',bound='Lower'}}},
+OptimalAerobraking = {name='Optimal Aerobraking', cost=10, effects={onPlayEvent={Heat=2,Plant=2}}},
+PowerInfrastructure = {name='Power Infrastructure', cost=4}, -- action: convert X heat to X MC
+IceCapMelting = {name='Ice Cap Melting', cost=4, instant={Ocean=1}, req={Temperature={range='White',bound='Lower'}}},
+RecycledDetritus = {name='Recycled Detritus', cost=24, effects={onPlayEvent={Cards=2}}, vp=1},
+LagrangeObservatory = {name='Lagrange Observatory', cost=7, instant={Cards=1}, vp=1},
+FarmersMarket = {name='Farmers Market', cost=12, action={cost={MC=1},profit={Plant=2}}, vp=1},
+FueledGenerators = {name='Fueled Generators', cost=4, production={Heat={Static=2}}, instant={TR=-1}, req={TR=1}, vp=1},
+GHGProducingBacteria = {name='GHG Producing Bacteria', cost=10, req={Oxygen={range='Red',bound='Lower'}}}, --action: 1 micro or 2 micro for 1 temp
+Decomposers = {name='Decomposers', cost=7, req={Oxygen={range='Red',bound='Lower'}}, vp=1}, --(Plant/Micro/Animal) => add microbe or remove microbe and draw
+ExtendedResources = {name='Extended Resources', cost=10, effects={researchKeep=1}},
+BreathingFilters = {name='Breathing Filters', cost=9, req={Oxygen={range='Yellow',bound='Lower'}}, vp=2},
+AsteroidMining = {name='Asteroid Mining', cost=28, production={Titan={Static=2}}, vp=2},
+ImmigrationShuttles = {name='Immigration Shuttles', cost=20, production={MC={Static=3}}}, -- 1vp per 2 (Earth Badge)
+MassConverter = {name='Mass Converter', cost=20, production={Heat={Static=3},Titan={Static=1}}, req={Symbol={Science=4}}, vp=2},
+BalancedPortfolios = {name='Balanced Portfolios', cost=8, production={MC={Static=3}}, instant={TR=-1}, req={TR=1}, vp=1},
+FarmingCoops = {name='Farming Co-ops', cost=15, instant={Plant=3}}, -- action: discard a card, then gain 3 plants
+InterplanetaryRelations = {name='Interplanetary Relations', cost=35, effects={researchDraw=1,researchKeep=1}}, -- 1vp per 4cards
+BusinessContacts = {name='Business Contacts', cost=5, instant={Cards=4}, manually='Discard 2 cards'},
+GeothermalPower = {name='Geothermal Power', cost=8, production={Heat={Static=2}}},
+ArtificialJungle = {name='Artificial Jungle', cost=5, action={cost={Plant=1},profit={Cards=1}}},
+FoodFactory = {name='Food Factory', cost=9, production={MC={Static=4}}, instant={Plant=-2}, req={Resources={Plant=2}}},
+MediaGroup = {name='Media Group', cost=11, effects={payEvent=-5}},
+InterplanetaryConference = {name='Interplanetary Conference', cost=6, afterEffects={payEarth=-3,onPlayEarth={Cards=1},payJovian=-3,onPlayJovian={Cards=1}}},
+TitaniumMine = {name='Titanium Mine', cost=7, production={Titan={Static=1}}},
+Grass = {name='Grass', cost=9, production={Plant={Static=1}}, instant={Plant=3}, req={Temperature={range='Red',bound='Lower'}}},
+UnderseaVents = {name='Undersea Vents', cost=31, production={Cards={Static=1},Heat={Static=4}}},
+Cartel = {name='Cartel', cost=6, production={MC={Symbol={Earth=1}}}},
+WorkCrews = {name='Work Crews', cost=5, state={projectLimit=1}, effects={payCardTemp=-11}},
+MethaneFromTitan = {name='Methane from Titan', cost=35, production={Plant={Static=2},Heat={Static=2}}, req={Oxygen={range='Red',bound='Lower'}}, vp=2},
+PhobosFalls = {name='Phobos Falls', cost=32, instant={Temperature=1,Ocean=1,Cards=2}, vp=1},
+AutomatedFactories = {name='Automated Factories', cost=18, production={Cards={Static=1}}, state={projectLimit=1,freeGreenNineLess=1}, manually='Play another green project with a printed cost of 9MC or less for free'},
+EosChasmaNationalPark = {name='Eos Chasma National Park', cost=16, production={MC={Static=2}}, instant={Plant=3}, req={Temperature={range='Red',bound='Lower'}}, vp=1}, --instant: 1 animal to another card
+CircuitBoardFactory = {name='Circuit Board Factory', cost=14, action={profit={Cards=1}}},
+SmallAnimals = {name='Small Animals', cost=9, tokenType='Animal', effects={onForest={Token={where='SmallAnimals'}}},req={Temperature={range='Red',bound='Lower'}},vp={token=0.5}},
+Trees = {name='Trees', cost=17, production={Plant={Static=3}}, instant={Plant=1}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
+AirborneRadiation = {name='Airborne Radiation', cost=15, production={Heat={Static=2}}, instant={Temperature=1}, req={Oxygen={range='Red',bound='Lower'}}},
+GiantIceAsteroid = {name='Giant Ice Asteroid', cost=36, instant={Temperature=2,Ocean=2}},
+BiomassCombustors = {name='Biomass Combustors', cost=15, production={Heat={Static=5}}, instant={Plant=-2}, req={Resources={Plant=2}}},
+LakeMarineris = {name='Lake Marineris', cost=17, instant={Ocean=2}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
+ArcticAlgae = {name='Arctic Algae', cost=19, effects={onOcean={Plant=4}}, req={Temperature={range='Red',bound='Lower'}}, vp=2},
+AtmosphericInsulators = {name='Atmospheric Insulators', cost=10, production={Heat={Symbol={Earth=1}}}},
+SlashAndBurnAgriculture = {name='Slash and Burn Agriculture', cost=8, production={Plant={Static=2}}, vp=-1},
+Plantation = {name='Plantation', cost=22, instant={Forest=2}, req={Symbol={Science=4}}},
+PermafrostExtraction = {name='Permafrost Extraction', cost=8, instant={Ocean=1}, req={Temperature={range='Yellow',bound='Lower'}}},
+BrainstormingSession = {name='Brainstorming Session', cost=8, action={customAction='greenMCrestKeep'}},
+BuildingIndustries = {name='Building Industries', cost=6, production={Steel={Static=2}}, instant={Heat=-4}, req={Resources={Heat=2}}},
+Soletta = {name='Soletta', cost=30, production={Heat={Static=5}}, vp=1},
+AeratedMagma = {name='Aerated Magma', cost=18, production={Cards={Static=1},Heat={Static=2}}, req={Oxygen={range='Red',bound='Lower'}}},
+TowingAComet = {name='Towing a Comet', cost=22, instant={Oxygen=1, Ocean=1, Plant=2}},
+TechnologyDemonstration = {name='Technology Demonstration', cost=17, instant={Ocean=1,Cards=2}},
+Mine = {name='Mine', cost=10, production={Steel={Static=2}}},
+GreatDam = {name='Great Dam', cost=12, production={Heat={Static=2}}, req={Ocean={value=2,bound='Lower'}}, vp=1},
+Heather = {name='Heather', cost=14, production={Plant={Static=1}}, instant={Plant=1}, vp=1},
+WavePower = {name='Wave Power', cost=9, production={Heat={Static=3}}, req={Ocean={value=3,bound='Lower'}}},
+CEOsFavoriteProject = {name="CEO's Favorite Project", cost=3}, -- instant: 2 ressources to a resource card
+EcologicalZone = {name='Ecological Zone', cost=11, tokenType='Animal', effects={onPlayAnimal={Token={where='EcologicalZone'}},onPlayPlant={Token={where='EcologicalZone'}}}, vp={token=0.5}},
+AdaptedLichen = {name='Adapted Lichen', cost=6, production={Plant={Static=1}}},
+Crater = {name='Crater', cost=7, instant={Ocean=1}, req={Symbol={Event=3}}},
+ResearchOutpost = {name='ResearchOutpost', cost=6, effects={payCard=-1}},
+StripMine = {name='Strip Mine', cost=12, production={Steel={Static=2},Titan={Static=1}}, instant={TR=-1}, req={TR=1}},
+InterstellarColonyShip = {name='Interstellar Colony Ship', cost=20, req={Symbol={Science=4}}, vp=4},
+ColonizerTrainingCamp = {name='Colonizer Training Camp', cost=10, req={Oxygen={range='Red',bound='Upper'}}, vp=2},
+RedraftedContracts = {name='Redrafted Contracts', cost=4}, -- action: discard 1-3, draw that many
+ImportedNitrogen = {name='Imported Nitrogen', cost=20, instant={TR=1,Plant=4}}, -- instant: 2 animals and 3 microbes
+WaterImportFromEuropa = {name='Water Import from Europa', cost=22,  action={cost={MC={base=12,reductionRes='Titan',reductionVal=1}}, profit={Ocean=1}}}, -- 1vp per (Jovian)
+AssemblyLines = {name='Assembly Lines', cost=13, effects={gainForCustomAction=1}},
+SubterraneanReservoir = {name='Subterranean Reservoir', cost=10, instant={Ocean=1}},
+ImportedGHG = {name='Imported GHG', cost=8, production={Heat={Static=1}}, instant={Heat=5}},
+TerraformingGanymede = {name='Terraforming Ganymede', cost=28, instant={TR={Symbol={Jovian=1}}}, vp=2},
+SolarPower = {name='Solar Power', cost=10, production={Heat={Static=1}}, vp=1},
+Solarpunk = {name='Solarpunk', cost=15,  action={cost={MC={base=15,reductionRes='Titan',reductionVal=2}}, profit={Forest=1}}, vp=1},
+PowerPlant = {name='Power Plant', cost=3, production={Heat={Static=1}}},
+EnergyStorage = {name='Energy Storage', cost=18, production={Cards={Static=2}}, req={TR=7}},
+CompostingFactory = {name='Composting Factory', cost=13, effects={cardValue=1}, vp=1},
+ExtremeColdFungus = {
+	name='Extreme-Cold Fungus',
+	cost=10,
+	action={profit={Choice={
+		{Token={where='ExtremeColdFungues'}},
+		{Action={where='ExtremeColdFungues',profit={Plant=1}}}
+	}}},
+	req={Temperature={range='Purple',bound='Upper'}}
+}, --action: 1plant or 1microbe
+DeepWellHeating = {name='Deep Well Heating', cost=14, production={Heat={Static=1}}, instant={Temperature=1}},
+AssetLiquidation = {
+	name='Asset Liquidation',
+	cost=0,
+	state={projectLimit=1},
+	action={cost={TR=1},profit={Cards=3}}
+}, -- action: 1TR for 3 cards
+UnitedPlanetaryAlliance = {name='United Planetary Alliance', cost=11, effects={researchDraw=1,researchKeep=1}},
+GeneRepair = {name='Gene Repair', cost=15, production={MC={Static=2}}, vp=2},
+AtmosphereFiltering = {name='Atmosphere Filtering', cost=6, instant={Oxygen=1}, req={Symbol={Science=2}}},
+VentureCapitalism = {name='Venture Capitalism', cost=11, production={MC={Symbol={Event=1}}}},
+MirandaResort = {name='Miranda Resort', cost=15, production={MC={Symbol={Earth=1}}}, vp=1},
+SymbioticFungus = {
+	name='Symbiotic Fungus',
+	cost=3,
+	profit={Token='Microbe'},
+	req={Temperature={range='Red',bound='Lower'}}
+}, --action: 1 microbe on another
+Livestock = {name='Livestock', cost=15, tokenType='Animal', effects={onTemperature={Token={where='Livestock'}}}, req={Oxygen={range='Yellow',bound='Lower'}}, vp={token=1}},
+PowerSupplyConsortium = {name='Power Supply Consortium', cost=12, production={MC={Static=2},Heat={Static=1}}},
+TollStation = {name='Toll Station', cost=16, production={MC={Static=3}}, state={projectLimit=1,freeGreenNineLess=1}, manually='Play another green project with a printed cost of 9MC or less for free'},
+LocalHeatTrapping = {
+	name='Local Heat Trapping',
+	cost=0,
+	instant={Plant=4,Heat=-3,Token={type={'Animal','Microbe'},value=2}},
+	req={Resources={Heat=3}}
+}, -- instant: add 2 animals or microbe
+SpecialDesign = {name='Special Design', cost=3, effects={conditionPufferTemp=1}, state={projectLimit=1}},
+ProtectedValley = {name='Protected Valley', cost=22, production={MC={Static=2}}, instant={Forest=1}},
+AdvancedEcosystems = {name='Advanced Ecosystems', cost=10, req={Symbol={Animal=1,Microbe=1,Plant=1}}, vp=3},
+ConvoyFromEuropa = {name='Convoy from Europa', cost=14, instant={Cards=1,Ocean=1}},
+DustyQuarry = {name='Dusty Quarry', cost=2, production={Steel={Static=1}}, req={Ocean={value=3,bound='Upper'}}},
+ThinkTank = {name='Think Tank', cost=13, action={cost={MC=2},profit={Cards=1}}}, -- 1vp per 3 (Blue) Cards
+InvestmentLoan = {name='Investment Loan', cost=1, instant={MC=10,TR=-1}, req={TR=1}, vp=1},
+ConservedBiome = {name='Conserved Biome', cost=25, action={profit={Token={'Animal','Microbe'}}}, vp={forest=0.5}},
+RegolithEaters = {name='Regolith Eaters', cost=10, req={Temperature={range='Red',bound='Lower'}}}, --action: add microbe or -2 microbe to oxygen
+Steelworks = {name='Steelworks', cost=15, action={cost={Heat=6},profit={MC=2,Oxygen=1}}, vp=1},
+BiothermalPower = {name='Biothermal Power', cost=18, production={Heat={Static=1}}, instant={Forest=1}},
+Fish = {name='Fish', cost=11, tokenType='Animal', effects={onOcean={Token={where='Fish'}}}, req={Temperature={range='Red',bound='Lower'}}, vp={token=1}},
+StandardTechnology = {name='Standard Technology', cost=15, effects={payStandardAction=-4}, vp=1},
+Algae = {name='Algae', cost=9, production={Plant={Static=2}}, req={Ocean={value=5,bound='Lower'}}},
+UndergroundCity = {name='Underground City', cost=7, production={MC={Static=1},Steel={Static=1}}},
+SatelliteFarms = {name='Satellite Farms', cost=17, production={Heat={Symbol={Space=1}}}},
+AquiferPumping = {name='Aquifer Pumping', cost=14, action={cost={MC={base=10,reductionRes='Steel',reductionVal=2}}, profit={Ocean=1}}},
+EnergySubsidies = {name='Energy Subsidies', cost=5, effects={payPower=-2,onPlayPower={Cards=1}}},
+IndustrialCenter = {name='Industrial Center', cost=15, production={MC={Static=3},Steel={Static=1}}},
+OlympusConference = {name='Olympus Conference', cost=15, effects={onPlayScience={Cards=1}}, vp=1},
+InventionContest = {name='Invention Contest', cost=1, instant={Cards=3}, manually='Keep one card from your left hand'},
+AntiGravityTechnology = {name='Anti-Gravity Technology', cost=18, effects={onPlayCard={Heat=2,Plant=2}}, req={Symbol={Science=5}}, vp=3},
+DevelopedInfrastructure = {name='Developed Infrastructure', cost=12, action={cost={MC={base=10,reductionCondition={Blue=5},reductionVal=5}},profit={Temperature=1}}, vp=1},
+MedicalLab = {name='Medical Lab', cost=15, production={MC={Symbol={Building=0.5}}}, vp=1},
+DecomposingFungus = {name='Decomposing Fungus', cost=10}, --instant: 2microbe, action: remove 1 animal or microbe for 3 plant
+IndustrialMicrobes = {name='Industrial Microbes', cost=9, production={Heat={Static=1},Steel={Static=1}}},
+Monocultures = {name='Monocultures', cost=6, production={Plant={Static=2}}, instant={TR=-1}, req={TR=1}},
+LargeConvoy = {name='Large Convoy', cost=36, instant={Ocean=1,Cards=2}, manually='Gain 5 plants or 3 animals', vp=2},
+Interns = {name='Interns', cost=3, effects={researchDraw=2}},
+VestaShipyard = {name='Vesta Shipyard', cost=16, production={Titan={Static=1}}, vp=1},
+Tardigrades = {name='Tardigrades', cost=6, tokenType='Microbe', action={profit={Token={where='Tardigrades'}}}, vp={token=0.34}},
+NuclearPlants = {name='Nuclear Plants', cost=10, production={MC={Static=1},Heat={Static=3}}, vp=-1},
+PowerGrid = {name='Power Grid', cost=8, production={MC={Symbol={Power=1}}}},
+Windmills = {name='Windmills', cost=10, production={Heat={Symbol={Power=1}}}, vp=1},
+TropicalResort = {name='Tropical Resort', cost=19, production={MC={Static=4}}, instant={Heat=-5}, req={Resources={Heat=5}}, vp=2},
+Astrofarm = {name='Astrofarm', cost=21, production={Plant={Static=1},Heat={Static=3}}}, --instant: 2microbes to another card
+TrappedHeat = {name='Trapped Heat', cost=20, production={Heat={Static=2}}, instant={Ocean=1}, req={Temperature={range='Red',bound='Lower'}}},
+ReleaseOfInertGases = {name='Release of Inert Gases', cost=16, instant={TR=2}},
+LightningHarvest = {name='Lightning Harvest', cost=13, production={MC={Symbol={Science=1}}}, vp=1},
+BribedCommittee = {name='Bribed Committee', cost=5, instant={TR=2}, vp=-2},
+Farming = {name='Farming', cost=20, production={MC={Static=2},Plant={Static=2}}, instant={Plant=2}, req={Temperature={range='White',bound='Lower'}}, vp=2},
+AnaerobicMicroorganisms = {
+	name='Anaerobic Microorganisms',
+	cost=10,
+	tokenType='Microbe',
+	effects={
+		onPlayPlant={Token={where='AnaerobicMicroorganisms'}},
+		onPlayMicrobe={Token={where='AnaerobicMicroorganisms'}},
+		onPlayAnimal={Token={where='AnaerobicMicroorganisms'}}
+	}
+}, -- when playing a card, -2microbe => -10MC 
+SpaceStation = {name='Space Station', cost=14, production={Titan={Static=1}}, vp=1},
+FuelFactory = {name='Fuel Factory', cost=9, production={MC={Static=1},Titan={Static=1}}, instant={Heat=-3}, req={Resources={Heat=3}}},
+Blueprints = {name='Blueprints', cost=17, production={Cards={Static=1},MC={Static=2}}},
+KelpFarming = {name='Kelp Farming', cost=17, production={MC={Static=2},Plant={Static=3}}, instant={Plant=2}, req={Ocean={value=6,bound='Lower'}}, vp=1},
+TectonicStressPower = {name='Tectonic Stress Power', cost=20, production={Heat={Static=3}}, vp=1},
+SurfaceMines = {name='Surface Mines', cost=13, production={Steel={Static=1},Titan={Static=1}}},
+AdvancedAlloys = {name='Advanced Alloys', cost=9, effects={steelValue=1,titanValue=1}},
+Zeppelins = {name='Zeppelins', cost=10, production={MC={Forest=1}}, req={Oxygen={range='Red',bound='Lower'}}, vp=1},
+MatterManufacturing = {name='Matter Manufacturing', cost=9, action={cost={MC=1},profit={Cards=1}}},
+ViralEnhancers = {name='Viral Enhancers', cost=8}, -- (Plant/Microbe/Animal): 1Plant or microbe/animal to another card
+AICentral = {name='AI Central', cost=22, action={profit={Cards=2}}, req={Symbol={Science=5}}, vp=2},
+Worms = {name='Worms', cost=11, production={Plant={Symbol={Microbe=1}}}, req={Oxygen={range='Red',bound='Lower'}}},
+Greenhouses = {name='Greenhouses', cost=11, req={Temperature={range='Yellow',bound='Lower'}}}, --action: 1-4Heat => 1-4Plant
+Satellites = {name='Satellites', cost=14, production={MC={Symbol={Space=1}}}},
+Ironworks = {name='Ironworks', cost=12, action={cost={Heat=4},profit={Oxygen=1}}},
+SolarTrapping = {name='Solar Trapping', cost=10, production={Heat={Static=1}}, instant={Cards=1,Heat=3}},
+WoodBurningStoves = {name='Wood Burning Stoves', cost=13, instant={Plant=4}, action={cost={Plant={base=4,reductionAction=1}},profit={Temperature=1}}},
+LowAtmoShields = {name='Low-Atmo Shields', cost=9, production={MC={Static=1},Heat={Static=2}}, req={Oxygen={range='Red',bound='Lower'}}},
+Moss = {name='Moss', cost=3, production={Plant={Static=1}}, instant={Plant=-1}, req={Ocean={value=3,bound='Lower'},Resources={Plant=2}}},
+RadSuits = {name='Rad Suits', cost=4, production={MC={Static=2}}, req={Ocean={value=2,bound='Lower'}}},
+MicroMills = {name='Micro-Mills', cost=9, production={Heat={Static=1},Steel={Static=1}}},
+EarthCatapult = {name='Earth Catapult', cost=24, effects={payCard=-2}, vp=2},
+Birds = {
+	name='Birds',
+	cost=15,
+	action={
+		profit={Token={where='Birds'}}
+	},
+	req={Oxygen={range='White',bound='Lower'}},
+	vp={token=1}
+},
+ArtificialLake = {name='Artificial Lake', cost=13, instant={Ocean=1}, req={Oxygen={range='Yellow',bound='Lower'}}, vp=1},
+NitriteReducingBacteria = {name='Nitrite Reducing Bacteria', cost=11, manually='Add 3 microbes to this project'}, --action: microbe to this card or -3microbe => ocean
+AdvancedScreeningTechnology = {name='Advanced Screening Technology', cost=6}, --action: reveal 3 cards, keep one card with (Plant/Science)
+DesignedMicroorganisms = {name='Designed Microorganisms', cost=15, production={Plant={Static=2}}, req={Temperature={range='Red',bound='Upper'}}},
+Insects = {name='Insects', cost=10, production={Plant={Symbol={Plant=1}}}},
+BeamFromAThoriumAsteroid = {name='Beam from a Thorium Asteroid', cost=23, production={Plant={Static=1},Heat={Static=3}}, req={Symbol={Jovian=1}}, vp=1},
+Bushes = {name='Bushes', cost=13, production={Plant={Static=2}},instant={Plant=2}, req={Temperature={range='Red',bound='Lower'}}},
+RestructuredResources = {name='Restructured Resources', cost=7}, --effect: play a card, may spend 1 plant for -5MC
+GanymedeShipyard = {name='Ganymede Shipyard', cost=17, production={Titan={Static=2}}},
+Research = {name='Research', cost=5, instant={Cards=2}},
+GiantSpaceMirror = {name='Giant Space Mirror', cost=13, production={Heat={Static=3}}},
+VolcanicPools = {name='Volcanic Pools', cost=17, action={cost={MC={base=12,reductionSymbol='Power',reductionVal=1}}, profit={Ocean=1}}, vp=1},
+CaretakerContract = {name='Caretaker Contract', cost=18, action={cost={Heat=8},profit={TR=1}}, vp=2},
+DevelopmentCenter = {name='Development Center', cost=7, action={cost={Heat=2},profit={Cards=1}}},
+MoholeArea = {name='Mohole Area', cost=18, production={Heat={Static=4}}},
+Archaebacteria = {name='Archaebacteria', cost=5, production={Plant={Static=1}}, req={Temperature={range='Purple',bound='Upper'}}},
+MarsUniversity = {name='Mars University', cost=10, vp=1}, --effect: (Science): discard a card => (Plant)2 cards, else 1 cards
+CallistoPenalMines = {name='Callisto Penal Mines', cost=20, production={Cards={Static=1}}, vp=1},
+NitrogenRichAsteroid = {name='Nitrogen-Rich Asteroid', cost=30, instant={TR=2,Temperature=1}, manually='If you have more than 3 symbols Plant, gain 4 plants, else gain 2 plants'}, -- 2 plants, 3+(Plant) 4 Plant
+FusionPower = {name='Fusion Power', cost=7, production={Cards={Static=1}}, req={Symbol={Power=2}}},
+Comet = {name='Comet', cost=25, instant={Temperature=1,Ocean=1}},
+CommunityGardens = {name='Community Gardens', cost=20, action={profit={MC=2},profitBonus={Plant=1}}},
+LavaFlows = {name='Lava Flows', cost=17, instant={Temperature=2}},
+}
