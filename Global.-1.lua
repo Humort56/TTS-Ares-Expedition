@@ -2,8 +2,10 @@
 -- Script by Nor Dogroth, 10th February
 -- MOD ID	2931011437
 
-CARDS = require "cards"
-require "utilityTags"
+CARDS = require("cards")
+require("projectAction")
+require("utilityTags")
+require("token")
 
 ----------------------------------------------------------------------------------------------------------------------------
 -- 					CH CONSTANTS
@@ -509,17 +511,6 @@ function createActivateProjectButton(card)
     })
 end
 
-function createProjectActionButton(card)
-	local data = CARDS[gnote(card)]
-
-	if data['action'] then
-		card.createButton({
-			click_function="activateProjectAction", position={-0.62,0.6,1.02}, height=300, width=350,
-			color={1,0,0,0.7}, scale={1,1,1}, tooltip="Activate"
-		})
-	end
-end
-
 -- select and activate project on click
 function activateProject(card,pcolor,alt)
 	if card.name == 'Deck' then sendError("You cannot activate deck",pcolor) card.clearButtons() return end
@@ -586,11 +577,11 @@ function activateProject(card,pcolor,alt)
 			sendError('This project cost more than 9 MC', pcolor)
 			return
 		end
-		astate(pcolor,'freeGreenNineLess',-1)
+		astate(pcolor,'freeGreenNineLess', 0)
 	end
 
 	callAction(' play the project ['..cardHex..']' .. cardName, pcolor)
-	astate(pcolor,'projectLimit', -1)
+	astate(pcolor,'projectLimit', projectLimit-1)
 	if 1 == gmod(pcolor, 'conditionPufferTemp') then amod(pcolor,'conditionPufferTemp', -1) end
 
 	printToColor(string.format(
@@ -669,7 +660,7 @@ function onPlay(pcolor, effects)
 
 				else
 					local card = gcard(pcolor, where)
-					addToken(card, 1)
+					TokenAdd(pcolor, card, 1)
 				end
 			end
 		end
@@ -704,104 +695,6 @@ function revealCard(pcolor, tagList)
 
 	draw(pcolor,1)
 	Wait.frames(|| revealCard(pcolor, tagList), 50)
-end
-
-function activateProjectAction(card, pcolor, alt)
-	local data = CARDS[gnote(card)]
-	local action = data.action
-
-	if 1 == gmod(pcolor, 'gainForCustomAction') then
-		addRes(pcolor, 1, 'MC')
-	end
-
-	for cost,value in pairs(action['cost'] or {}) do
-		if contains(RESOURCES, cost) then
-			local res = getRes(pcolor, cost)
-			local trueValue = value
-
-			if 'table' == type(value) then
-				local base = value['base']
-				local reduction = 0
-
-				if value['reductionRes'] then
-					reduction = getRes(pcolor, value['reductionRes']) * value['reductionVal']
-				elseif value['reductionSymbol'] then
-					reduction = getTagCount(value['reductionSymbol'], pcolor) * value['reductionVal']
-				elseif value['reductionAction'] then
-					reduction = value['reductionAction']
-				elseif value['reductionCondition'] then
-					local condition = true
-
-					for conditionType,conditionValue in pairs(value['reductionCondition']) do
-						if contains(PROJ_COLORS, conditionType) then
-							condition = condition and (getColorCount(pcolor, conditionType) >= conditionValue)
-						end
-
-						if contains(SYMBOLS, conditionType) then
-							condition = condition and (getTagCount(pcolor, conditionType) >= conditionValue)
-						end
-					end
-
-					if condition then
-						reduction = value['reductionVal']
-					end
-				end
-
-				trueValue = base - reduction
-				if trueValue < 0 then trueValue = 0 end
-			end
-			
-			if trueValue > res then
-				-- send error when not enought resources
-				sendError('You do not have enought '..cost)
-				return
-			end
-
-			printToColor('You paid '..trueValue..' '..cost..' to use this action', pcolor)
-			addRes(pcolor, -trueValue, cost)
-		end
-	end
-
-	for profit, value in pairs(action['profit'] or {}) do
-		if contains(RESOURCES, profit) then
-			addRes(pcolor, value, profit)
-		end
-		if contains(TERRAFORMING,profit) then
-			_G['inc'..profit](value, pcolor)
-		end
-		if 'Token' == profit then
-			if value.where then
-				local card = gcard(pcolor, value.where)
-				addToken(card, 1)
-			else
-				selectTokenHolder(pcolor, value)
-			end
-		end
-	end
-
-	if hasActivePhase(pcolor,3) then
-		for profit, value in pairs(action['profitBonus'] or {}) do
-			if contains(RESOURCES, profit) then
-				addRes(pcolor, value, profit)
-			end
-		end
-	end
-
-	if action['customAction'] then
-		local custom = action['customAction']
-		if 'greenMCrestKeep' == custom then
-			draw(pcolor, 1)
-			local cards = Player[pcolor].getHandObjects(HAND_INDEX_DRAW)
-			local card = cards[1]
-
-			if card.hasTag('Green') then
-				addRes(pcolor, 1, 'MC')
-				discard(card)
-			end
-		end
-	end
-
-	card.removeButton(0)
 end
 
 function activateProjectProduction(card, pcolor)
@@ -1318,25 +1211,29 @@ end
 
 function doActionPhase()
 	for _,pcolor in ipairs(playersInGame()) do
-		local projectLimit = gstate(pcolor,'projectLimit')
-
 		if 'Development' == PHASE_NAMES[CURRENT_PHASE] then
-			astate(pcolor, 'projectLimit', -(projectLimit-1))
+			astate(pcolor, 'projectLimit', 1)
 		end
 
 		if 'Construction' == PHASE_NAMES[CURRENT_PHASE] then
 			local limit = 1
 			if hasActivePhase(pcolor,2) then limit = 2 end
 
-			astate(pcolor, 'projectLimit', -(projectLimit-limit))
+			astate(pcolor, 'projectLimit', limit)
 		end
 
-		--[[
 		if 'Action' == PHASE_NAMES[CURRENT_PHASE] then
+			astate(pcolor, 'action', {})
+			astate(pcolor, 'actionInUse', {})
+
+			local limit = 1
+			if hasActivePhase(pcolor, 3) then limit = 2 end
+			astate(pcolor, 'actionLimit', limit)
+
 			local activatedCards = gtags({'c'..pcolor, 'Blue', 'activated'})
 			for _,card in pairs(activatedCards) do
 				if CARDS[gnote(card)]['action'] then
-					createProjectActionButton(card)
+					ProjectActionButtonCreate(card)
 				end
 			end
 		end
@@ -1347,7 +1244,6 @@ function doActionPhase()
 				card.clearButtons()
 			end
 		end
-		]]--
 
 		if 'Production' == PHASE_NAMES[CURRENT_PHASE] then
 			Wait.frames(|| produce(pcolor),150)
@@ -2185,92 +2081,6 @@ function getConditionError(element, condition, pcolor)
 end
 
 ----------------------------------------------------------------------------------------------------------------------------
--- 					CH Tokens
-----------------------------------------------------------------------------------------------------------------------------
-function getTokenCount(card)
-	local name = gnote(card)
-	local data = CARDS[name]
-	local tokens = gtags({data.tokenType..'Token','OwnedBy'..name})
-	local tokenCount = 0
-
-	local stack = nil
-	local stackPresent = false
-	for _,token in pairs(tokens) do
-		if 'Custom_Token_Stack' == token['name'] then
-			stackPresent = true
-			stack = token
-		end
-	end
-
-	if stackPresent then
-		tokenCount = stack.getQuantity() + 1
-	else
-		tokenCount = #tokens
-	end
-
-	return tokenCount
-end
-
-function selectTokenHolder(pcolor, tokenTypes)
-	if 'string' == type(tokenTypes) then
-		tokenTypes = {tokenTypes}
-	end
-
-	for _,tokenType in pairs(tokenTypes) do
-		local cards = gtags({'c'..pcolor, tokenType..'Holder'})
-		for _,card in pairs(cards) do
-			createProjectTokenButton(card)
-		end
-	end
-end
-
-function createProjectTokenButton(card)
-	local data = CARDS[gnote(card)]
-
-	if data.tokenType then
-		card.createButton({
-			click_function="activateProjectToken", position={-0.62,0.6,0}, height=300, width=350,
-			color={0,1,0,0.9}, scale={1,1,1}, tooltip=data.tokenType
-		})
-		card.addTag('buttonTokenActivated')
-	end
-end
-
-function activateProjectToken(card, pcolor, alt)
-	addToken(card, 1)
-	card.clearButtons()
-end
-
-function addToken(card, add)
-	local add = add or 1
-	local pcolor = gowner(card)
-	local name = gnote(card)
-	local data = CARDS[name]
-	local tokenType = data['tokenType']
-	local trueTokenType = tokenType
-
-	if tokenType == 'Science' then trueTokenType = 'Microbe' end
-
-	local bag = gftags({'c'..pcolor,trueTokenType..'Bag'})
-	local tokenPos = card.positionToWorld({0.62,0.6,-1.02})
-
-	for i=1,add do
-		local newToken = bag.takeObject()
-		newToken.addTag('c'..pcolor)
-		newToken.addTag(tokenType..'Token')
-		newToken.addTag('OwnedBy'..name)
-		newToken.setPosition(tokenPos)
-	end
-
-	local cards = gtags({'c'..pcolor,'buttonTokenActivated'})
-	for _,unused_card in pairs(cards) do
-		unused_card.removeTag('buttonTokenActivated')
-		unused_card.clearButtons()
-	end
-	
-end
-
-----------------------------------------------------------------------------------------------------------------------------
 -- 					CH Effects + Production
 ----------------------------------------------------------------------------------------------------------------------------
 -- payEarth				pay +x MC for card with Earth tag → similar for other tags
@@ -2388,11 +2198,16 @@ end
 
 function astate(pcolor,state,add)
 	local states = gstates(pcolor)
+	states[state] = add
+end
+
+function mstate(pcolor,state,add)
+	local states = gstates(pcolor)
 	states[state] = (states[state] or 0) + (add or 1)
 end
 
 function astateList(pcolor, list)
 	for state, value in pairs(list) do
-		astate(pcolor,state,value)
+		mstate(pcolor,state,value)
 	end
 end

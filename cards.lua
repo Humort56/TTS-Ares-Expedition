@@ -78,7 +78,16 @@ local Cards = {
     LagrangeObservatory = {name='Lagrange Observatory', cost=7, instant={Cards=1}, vp=1},
     FarmersMarket = {name='Farmers Market', cost=12, action={cost={MC=1},profit={Plant=2}}, vp=1},
     FueledGenerators = {name='Fueled Generators', cost=4, production={Heat={Static=2}}, instant={TR=-1}, req={TR=1}, vp=1},
-    GHGProducingBacteria = {name='GHG Producing Bacteria', cost=10, req={Oxygen={range='Red',bound='Lower'}}}, --action: 1 micro or 2 micro for 1 temp
+    GHGProducingBacteria = {
+        name='GHG Producing Bacteria',
+        cost=10,
+        tokenType='Microbe',
+        action={choice={
+            {Token={where='self'}},
+            {Action={cost={Token={where='self', value=2}},profit={Temperature=1}}}
+        }},
+        req={Oxygen={range='Red',bound='Lower'}}
+    },
     Decomposers = {name='Decomposers', cost=7, req={Oxygen={range='Red',bound='Lower'}}, vp=1}, --(Plant/Micro/Animal) => add microbe or remove microbe and draw
     ExtendedResources = {name='Extended Resources', cost=10, effects={researchKeep=1}},
     BreathingFilters = {name='Breathing Filters', cost=9, req={Oxygen={range='Yellow',bound='Lower'}}, vp=2},
@@ -148,10 +157,10 @@ local Cards = {
     ExtremeColdFungus = {
         name='Extreme-Cold Fungus',
         cost=10,
-        action={profit={Choice={
-            {Token={where='ExtremeColdFungues'}},
-            {Action={where='ExtremeColdFungues',profit={Plant=1}}}
-        }}},
+        action={choice={
+            {Token={type='Microbe'}},
+            {Action={profit={Plant=1}}}
+        }},
         req={Temperature={range='Purple',bound='Upper'}}
     }, --action: 1plant or 1microbe
     DeepWellHeating = {name='Deep Well Heating', cost=14, production={Heat={Static=1}}, instant={Temperature=1}},
@@ -189,7 +198,16 @@ local Cards = {
     ThinkTank = {name='Think Tank', cost=13, action={cost={MC=2},profit={Cards=1}}}, -- 1vp per 3 (Blue) Cards
     InvestmentLoan = {name='Investment Loan', cost=1, instant={MC=10,TR=-1}, req={TR=1}, vp=1},
     ConservedBiome = {name='Conserved Biome', cost=25, action={profit={Token={'Animal','Microbe'}}}, vp={forest=0.5}},
-    RegolithEaters = {name='Regolith Eaters', cost=10, req={Temperature={range='Red',bound='Lower'}}}, --action: add microbe or -2 microbe to oxygen
+    RegolithEaters = {
+        name='Regolith Eaters',
+        cost=10,
+        tokenType='Microbe',
+        action={choice={
+            {Token={where='self'}},
+            {Action={cost={Token={where='self', value=2},profit={Oxygen=1}}}}
+        }},
+        req={Temperature={range='Red',bound='Lower'}}
+    },
     Steelworks = {name='Steelworks', cost=15, action={cost={Heat=6},profit={MC=2,Oxygen=1}}, vp=1},
     BiothermalPower = {name='Biothermal Power', cost=18, production={Heat={Static=1}}, instant={Forest=1}},
     Fish = {name='Fish', cost=11, tokenType='Animal', effects={onOcean={Token={where='Fish'}}}, req={Temperature={range='Red',bound='Lower'}}, vp={token=1}},
@@ -211,7 +229,13 @@ local Cards = {
     LargeConvoy = {name='Large Convoy', cost=36, instant={Ocean=1,Cards=2}, manually='Gain 5 plants or 3 animals', vp=2},
     Interns = {name='Interns', cost=3, effects={researchDraw=2}},
     VestaShipyard = {name='Vesta Shipyard', cost=16, production={Titan={Static=1}}, vp=1},
-    Tardigrades = {name='Tardigrades', cost=6, tokenType='Microbe', action={profit={Token={where='Tardigrades'}}}, vp={token=0.34}},
+    Tardigrades = {
+        name='Tardigrades',
+        cost=6,
+        tokenType='Microbe',
+        action={profit={Token={where='self'}}},
+        vp={token=0.34}
+    },
     NuclearPlants = {name='Nuclear Plants', cost=10, production={MC={Static=1},Heat={Static=3}}, vp=-1},
     PowerGrid = {name='Power Grid', cost=8, production={MC={Symbol={Power=1}}}},
     Windmills = {name='Windmills', cost=10, production={Heat={Symbol={Power=1}}}, vp=1},
@@ -264,7 +288,16 @@ local Cards = {
         vp={token=1}
     },
     ArtificialLake = {name='Artificial Lake', cost=13, instant={Ocean=1}, req={Oxygen={range='Yellow',bound='Lower'}}, vp=1},
-    NitriteReducingBacteria = {name='Nitrite Reducing Bacteria', cost=11, manually='Add 3 microbes to this project'}, --action: microbe to this card or -3microbe => ocean
+    NitriteReducingBacteria = {
+        name='Nitrite Reducing Bacteria',
+        cost=11,
+        tokenType='Microbe',
+        action={choice={
+            {Token={where='self'}},
+            {Action={cost={Token={where='self', value=3}},profit={Ocean=1}}}
+        }},
+        manually='Add 3 microbes to this project'
+    }, --instant: 3 microbe
     AdvancedScreeningTechnology = {name='Advanced Screening Technology', cost=6}, --action: reveal 3 cards, keep one card with (Plant/Science)
     DesignedMicroorganisms = {name='Designed Microorganisms', cost=15, production={Plant={Static=2}}, req={Temperature={range='Red',bound='Upper'}}},
     Insects = {name='Insects', cost=10, production={Plant={Symbol={Plant=1}}}},

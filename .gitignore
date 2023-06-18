@@ -2,4 +2,6 @@
 !.gitignore
 !Global.-1.lua
 !cards.lua
+!projectAction.lua
+!token.lua
 !utilityTags.lua
