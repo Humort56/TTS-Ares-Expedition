@@ -630,8 +630,6 @@ function activateProject(card,pcolor,alt)
 
 	playCardOnBoard(pcolor, card)
 
-	amodList(pcolor, data.afterEffects or {})
-
 	if data.manually then
 		Wait.time(|| broadcastToColor(data.manually,pcolor,'Orange'), 2)
 	end
@@ -2115,6 +2113,7 @@ function playTag(pcolor,card)
 	end
 	
 	local data = CARDS[gnote(card)]
+
 	amodList(pcolor, data.afterEffects or {})
 end
 
