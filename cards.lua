@@ -66,7 +66,18 @@ local Cards = {
     TundraFarming = {name='Tundra Farming', cost=12, production={MC={Static=2},Plant={Static=1}}, instant={Plant=1}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
     ImportedHydrogen = {name='Imported Hydrogen', cost=17, instant={Ocean=1}}, -- gain 3 plants, or 3 microbes, or 2 animals
     IoMiningIndustries = {name='Io Mining Industries', cost=37, production={MC={Static=1},Titan={Static=2}}}, -- 1VP per (Jovian Badge)
-    Herbivores = {name='Herbivores', cost=25, tokenType='Animal', effects={onOcean={Token={where='Herbivores'}},onTemperature={Token={where='Herbivores'}},onOxygen={Token={where='Herbivores'}}}, req={Ocean={value=5,bound='Lower'}}, vp={token=0.5}},
+    Herbivores = {
+        name='Herbivores',
+        cost=25,
+        tokenType='Animal',
+        effects={
+            onOcean={Token={where='Herbivores'}},
+            onTemperature={Token={where='Herbivores'}},
+            onOxygen={Token={where='Herbivores'}}
+        },
+        req={Ocean={value=5,bound='Lower'}},
+        vp={token=0.5}
+    },
     PhysicsComplex = {name='PhysicsComplex', cost=5, tokenType='Science', effects={onTemperature={Token={where='PhysicsComplex'}}}, req={Symbol={Science=4}}, vp={token=0.5}},
     NoctisFarming = {name='Noctis Farming', cost=13, production={Plant={Static=1}}, instant={Plant=2}, req={Temperature={range='Red',bound='Lower'}}, vp=1},
     DiversifiedInterests = {name='Diversified Interests', cost=15, production={Plant={Static=1}}, instant={Plant=3,Heat=3}},
@@ -120,7 +131,16 @@ local Cards = {
     AutomatedFactories = {name='Automated Factories', cost=18, production={Cards={Static=1}}, state={projectLimit=1,freeGreenNineLess=1}, manually='Play another green project with a printed cost of 9MC or less for free'},
     EosChasmaNationalPark = {name='Eos Chasma National Park', cost=16, production={MC={Static=2}}, instant={Plant=3}, req={Temperature={range='Red',bound='Lower'}}, vp=1}, --instant: 1 animal to another card
     CircuitBoardFactory = {name='Circuit Board Factory', cost=14, action={profit={Cards=1}}},
-    SmallAnimals = {name='Small Animals', cost=9, tokenType='Animal', effects={onForest={Token={where='SmallAnimals'}}},req={Temperature={range='Red',bound='Lower'}},vp={token=0.5}},
+    SmallAnimals = {
+        name='Small Animals',
+        cost=9,
+        tokenType='Animal',
+        effects={
+            onForest={Token={where='SmallAnimals'}}
+        },
+        req={Temperature={range='Red',bound='Lower'}},
+        vp={token=0.5}
+    },
     Trees = {name='Trees', cost=17, production={Plant={Static=3}}, instant={Plant=1}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
     AirborneRadiation = {name='Airborne Radiation', cost=15, production={Heat={Static=2}}, instant={Temperature=1}, req={Oxygen={range='Red',bound='Lower'}}},
     GiantIceAsteroid = {name='Giant Ice Asteroid', cost=36, instant={Temperature=2,Ocean=2}},
@@ -142,7 +162,16 @@ local Cards = {
     Heather = {name='Heather', cost=14, production={Plant={Static=1}}, instant={Plant=1}, vp=1},
     WavePower = {name='Wave Power', cost=9, production={Heat={Static=3}}, req={Ocean={value=3,bound='Lower'}}},
     CEOsFavoriteProject = {name="CEO's Favorite Project", cost=3}, -- instant: 2 ressources to a resource card
-    EcologicalZone = {name='Ecological Zone', cost=11, tokenType='Animal', effects={onPlayAnimal={Token={where='EcologicalZone'}},onPlayPlant={Token={where='EcologicalZone'}}}, vp={token=0.5}},
+    EcologicalZone = {
+        name='Ecological Zone',
+        cost=11,
+        tokenType='Animal',
+        effects={
+            onPlayAnimal={Token={where='EcologicalZone'}},
+            onPlayPlant={Token={where='EcologicalZone'}}
+        },
+        vp={token=0.5}
+    },
     AdaptedLichen = {name='Adapted Lichen', cost=6, production={Plant={Static=1}}},
     Crater = {name='Crater', cost=7, instant={Ocean=1}, req={Symbol={Event=3}}},
     ResearchOutpost = {name='ResearchOutpost', cost=6, effects={payCard=-1}},
@@ -187,8 +216,17 @@ local Cards = {
         cost=3,
         profit={Token='Microbe'},
         req={Temperature={range='Red',bound='Lower'}}
-    }, --action: 1 microbe on another
-    Livestock = {name='Livestock', cost=15, tokenType='Animal', effects={onTemperature={Token={where='Livestock'}}}, req={Oxygen={range='Yellow',bound='Lower'}}, vp={token=1}},
+    },
+    Livestock = {
+        name='Livestock',
+        cost=15,
+        tokenType='Animal',
+        effects={
+            onTemperature={Token={where='Livestock'}}
+        },
+        req={Oxygen={range='Yellow',bound='Lower'}},
+        vp={token=1}
+    },
     PowerSupplyConsortium = {name='Power Supply Consortium', cost=12, production={MC={Static=2},Heat={Static=1}}},
     TollStation = {name='Toll Station', cost=16, production={MC={Static=3}}, state={projectLimit=1,freeGreenNineLess=1}, manually='Play another green project with a printed cost of 9MC or less for free'},
     LocalHeatTrapping = {
@@ -272,7 +310,33 @@ local Cards = {
     AdvancedAlloys = {name='Advanced Alloys', cost=9, effects={steelValue=1,titanValue=1}},
     Zeppelins = {name='Zeppelins', cost=10, production={MC={Forest=1}}, req={Oxygen={range='Red',bound='Lower'}}, vp=1},
     MatterManufacturing = {name='Matter Manufacturing', cost=9, action={cost={MC=1},profit={Cards=1}}},
-    ViralEnhancers = {name='Viral Enhancers', cost=8}, -- (Plant/Microbe/Animal): 1Plant or microbe/animal to another card
+    ViralEnhancers = {
+        name='Viral Enhancers',
+        cost=8,
+        effects={
+            onPlayAnimal={choice={
+                name='ViralEnhancers',
+                choices={
+                    {Token={type={'Microbe','Animal'}}},
+                    {Action={where='self',profit={Plant=1}}}
+                }
+            }},
+            onPlayMicrobe={choice={
+                name='ViralEnhancers',
+                choices={
+                    {Token={type={'Microbe','Animal'}}},
+                    {Action={where='self',profit={Plant=1}}}
+                }
+            }},
+            onPlayPlant={choice={
+                name='ViralEnhancers',
+                choices={
+                    {Token={type={'Microbe','Animal'}}},
+                    {Action={where='self',profit={Plant=1}}}
+                }
+            }}
+        }
+    }, -- (Plant/Microbe/Animal): 1Plant or microbe/animal to another card
     AICentral = {name='AI Central', cost=22, action={profit={Cards=2}}, req={Symbol={Science=5}}, vp=2},
     Worms = {name='Worms', cost=11, production={Plant={Symbol={Microbe=1}}}, req={Oxygen={range='Red',bound='Lower'}}},
     Greenhouses = {name='Greenhouses', cost=11, req={Temperature={range='Yellow',bound='Lower'}}}, --action: 1-4Heat => 1-4Plant
