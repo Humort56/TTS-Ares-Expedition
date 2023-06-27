@@ -43,37 +43,12 @@ function ProjectActionActivate(card, pcolor, alt)
         end
 
         if action.choice then
-            for _,choice in pairs(action.choice) do
-                if choice.Action then
-                    local state = gstate(pcolor, 'action')
-
-                    state[name] = choice.Action
-                    astate(pcolor, 'action', state)
-    
-                    ProjectActionInUse(pcolor, card, true)
-                    ProjectActionButtonRemove(card)
-                    ProjectActionChoiceButtonCreate(card)
-
-                end
-    
-                if choice.Token then
-                    local token = choice.Token
-                    if token.type then
-                        TokenSelect(pcolor, token.type)
-                        ProjectActionInUse(pcolor, card, true)
-                    end
-    
-                    if token.where then
-                        if 'self' == token.where then
-                            TokenButtonCreate(card)
-                        end
-                    end
-                end
-            end
+            ChoiceSelect(pcolor, card, action.choice)
         end
 
-        local inUse = gstate(pcolor, 'actionInUse')[name] or false
-        if not inUse then ProjectActionRecreate(card) end
+        if not ProjectActionGetInUse(pcolor, name) then
+            ProjectActionRecreate(pcolor, card)
+        end
     end
 end
 
@@ -188,8 +163,13 @@ function ProjectActionHandle(pcolor, action, card)
 	end
 end
 
+function ProjectActionGetInUse(pcolor, name)
+    return gstate(pcolor, 'actionInUse')[name] or false
+end
+
 function ProjectActionInUse(pcolor, card, status)
     local state = gstate(pcolor, 'actionInUse')
+    state['inUse'] = status
     state[gnote(card)] = status
     astate(pcolor, 'actionInUse', state)
 end
@@ -208,9 +188,17 @@ function ProjectActionEnd(pcolor)
     ProjectActionRecreate(pcolor, lastActionCard)
 end
 
-function ProjectActionRecreate(card)
+function ProjectActionRecreate(pcolor, card)
     ProjectActionButtonRemove(card)
 
-    -- if limit is not reached
-    ProjectActionButtonCreate(card)
+    if PhaseIsAction() then
+        -- if limit is not reached
+        ProjectActionButtonCreate(card)
+    else
+        local queue = ChoiceQueueGet(pcolor)
+
+        if #queue > 0 then
+            ChoiceQueueConsume(pcolor)
+        end
+    end
 end

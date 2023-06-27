@@ -3,9 +3,10 @@
 -- MOD ID	2931011437
 
 CARDS = require("cards")
+require("choice")
 require("projectAction")
-require("utilityTags")
 require("token")
+require("utilityTags")
 
 ----------------------------------------------------------------------------------------------------------------------------
 -- 					CH CONSTANTS
@@ -663,6 +664,13 @@ function onPlay(pcolor, effects)
 			end
 		end
 
+		if 'choice' == effectType then
+			for _,effect in pairs(typeData) do
+				local card = gcard(pcolor,effect.name)
+				ChoiceQueueInsert(pcolor, card, effect.choices)
+			end
+		end
+
 		if 'TR' == effectType then
 			addTR(pcolor, typeData)
 		end
@@ -1220,7 +1228,7 @@ function doActionPhase()
 			astate(pcolor, 'projectLimit', limit)
 		end
 
-		if 'Action' == PHASE_NAMES[CURRENT_PHASE] then
+		if PhaseIsAction() then
 			astate(pcolor, 'action', {})
 			astate(pcolor, 'actionInUse', {})
 
@@ -1236,7 +1244,7 @@ function doActionPhase()
 			end
 		end
 
-		if 'Action' != PHASE_NAMES[CURRENT_PHASE] then
+		if not PhaseIsAction() then
 			local activatedCards = gtags({'c'..pcolor, 'Blue', 'activated'})
 			for _,card in pairs(activatedCards) do
 				card.clearButtons()
@@ -1261,6 +1269,10 @@ function doActionPhase()
 			draw(pcolor, researchDraw)
 		end
 	end
+end
+
+function PhaseIsAction()
+	return CURRENT_PHASE == 3
 end
 
 function getNextPhase()
