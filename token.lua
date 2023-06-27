@@ -70,16 +70,7 @@ end
 function TokenButtonActivate(card, pcolor, alt)
     TokenAdd(pcolor, card, 1)
 
-    TokenUnselect(pcolor)
-
-    local lastActionName = gstate(pcolor, 'lastActionCard')
-    local lastActionCard = gcard(pcolor, lastActionName)
-
-    local state = gstate(pcolor, 'action')
-    state[lastActionName] = nil
-    astate(pcolor, 'action', state)
-
-    ProjectActionRecreate(card)
+    ProjectActionEnd(pcolor)
 end
 
 function TokenSelect(pcolor, tokenTypes)

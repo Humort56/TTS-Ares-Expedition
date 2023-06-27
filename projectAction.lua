@@ -28,12 +28,7 @@ function ProjectActionActivate(card, pcolor, alt)
         local abort = ProjectActionHandle(pcolor, state[name], card)
         if abort then return end
 
-        state[name] = nil
-        astate(pcolor, 'action', state)
-
-        TokenUnselect(pcolor)
-        
-        ProjectActionRecreate(card)
+        ProjectActionEnd(pcolor)
     else
         local action = CARDS[name]['action']
 
@@ -197,6 +192,20 @@ function ProjectActionInUse(pcolor, card, status)
     local state = gstate(pcolor, 'actionInUse')
     state[gnote(card)] = status
     astate(pcolor, 'actionInUse', state)
+end
+
+function ProjectActionEnd(pcolor)
+    TokenUnselect(pcolor)
+
+    local lastActionName = gstate(pcolor, 'lastActionCard')
+    local lastActionCard = gcard(pcolor, lastActionName)
+
+    ProjectActionInUse(pcolor, lastActionCard, false)
+    local state = gstate(pcolor, 'action')
+    state[lastActionName] = nil
+    astate(pcolor, 'action', state)
+
+    ProjectActionRecreate(pcolor, lastActionCard)
 end
 
 function ProjectActionRecreate(card)
