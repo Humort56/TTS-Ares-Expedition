@@ -17,6 +17,8 @@ function TokenAdd(pcolor, card, add)
             newToken.addTag('OwnedBy'..name)
             newToken.setPosition(tokenPos)
         end
+
+        TokenOnPlay(pcolor, tokenType)
     elseif add < 0 then
         local value = -add
         local tokenCount = TokenCount(card) 
@@ -126,4 +128,27 @@ function TokenCount(card)
 	end
 
 	return tokenCount
+end
+
+function TokenOnPlay(pcolor, tokenType)
+    local effects = gmod(pcolor, 'on' .. tokenType .. 'Token')
+    
+    if 'number' == type(effects) then
+        return
+    end
+
+    for effectType,typeData in pairs(effects) do	
+		if 'Token' == effectType then
+			for _,effect in pairs(typeData) do
+				local where = effect['where']
+
+				if 'others' == where then
+                    -- todo
+				else
+					local card = gcard(pcolor, where)
+					TokenAdd(pcolor, card, 1)
+				end
+			end
+		end
+	end
 end

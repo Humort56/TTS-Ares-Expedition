@@ -50,7 +50,14 @@ local Cards = {
     SelfReplicatingBacteria = {name='Self-Replicating Bacteria', cost=8}, -- action: add microbe or -5 microbe for -25MC on a card
     MatterGenerator = {name='Matter Generator', cost=13, instant={Cards=2}}, -- action: discard a card for 6 mc
     ProgressivePolicies = {name='Progressive Policies', cost=8, action={cost={MC={base=10,reductionCondition={Event=4},reductionVal=5}},profit={Oxygen=1}}},
-    FilterFeeders = {name='Filter Feeders', cost=9, tokenType='Animal', req={Ocean={value=2,bound='Lower'}}}, -- 1vp per 3animals, effect: when adding microbe to another card, add animal to this one
+    FilterFeeders = {
+        name='Filter Feeders',
+        cost=9,
+        tokenType='Animal',
+        effects={onMicrobeToken={Token={where='FilterFeeders'}}},
+        req={Ocean={value=2,bound='Lower'}},
+        vp={token=0.34}
+    },
     SyntheticCatastrophe = {name='Synthetic Catastrophe', cost=0}, -- return another red card to the hand
     AssortedEnterprises = {name='Assorted Enterprises', cost=2, state={projectLimit=1}, effects={playGreenDuringConstruction=1,payCardTemp=-2}},
     -- Cards
