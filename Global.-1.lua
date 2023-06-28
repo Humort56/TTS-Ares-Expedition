@@ -563,7 +563,7 @@ function activateProject(card,pcolor,alt)
 	end
 
 	-- check if project can be played
-	if not fulfillConditions(data.req or {}, pcolor) then
+	if not ProjectConditions(pcolor, data.req or {}) then
 		return
 	end
 
