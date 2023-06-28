@@ -21,7 +21,7 @@ function ProjectActionButtonRemove(card)
 end
 
 function ProjectActionClean(pcolor)
-    local cards = gtags({'c'..pcolor,'onPlayAction'})
+    local cards = gtag('c'..pcolor)
 
     for _,card in pairs(cards) do
         ProjectActionButtonRemove(card)
@@ -102,7 +102,6 @@ function ProjectActionOnPlay(pcolor)
     local cards = gtags({'c'..pcolor,'onPlayAction'})
 
     for _,card in pairs(cards) do
-        local name = gnote(card)
         ProjectActionChoiceButtonCreate(card)
     end
 end
@@ -284,6 +283,8 @@ function ProjectActionRecreate(pcolor, card)
 
         if #queue > 0 then
             ChoiceQueueConsume(pcolor)
+        else
+            ProjectActionOnPlay(pcolor)
         end
     end
 end

@@ -38,6 +38,7 @@ function ChoiceQueueInsert(pcolor, card, choices)
         table.insert(queue, {name=gnote(card), choices=choices})
         ChoiceQueueSet(pcolor, queue)
     else
+        ProjectActionClean(pcolor)
         ChoiceSelect(pcolor, card, choices)
     end
 end

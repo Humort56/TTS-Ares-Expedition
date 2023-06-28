@@ -2100,7 +2100,7 @@ function playTag(pcolor,card)
 
 	zmod(pcolor, 'payCardTemp')
 	-- reactivate onPlayAction cards if projectLimit not reached
-	if gstate(pcolor,'projectLimit') > 0 then
+	if gstate(pcolor,'projectLimit') > 0 and not ProjectActionGetInUse(pcolor, 'inUse') then
 		ProjectActionOnPlay(pcolor)
 	end
 end
