@@ -4,6 +4,7 @@
 
 CARDS = require("cards")
 require("choice")
+require("project")
 require("projectAction")
 require("token")
 require("utilityTags")
@@ -575,7 +576,7 @@ function activateProject(card,pcolor,alt)
 		end
 
 		addRes(pcolor, -cost, 'MC')
-		if gmod(pcolor, 'payCardTemp') < 0 then amod(pcolor,'payCardTemp', -gmod(pcolor,'payCardTemp')) end
+		zmod(pcolor,'payCardTemp')
 	else
 		if ProjectCostOriginal(card) > 9 then
 			sendError('This project cost more than 9 MC', pcolor)
@@ -642,8 +643,15 @@ function activateProject(card,pcolor,alt)
 		card.addTag(data.tokenType..'Holder')
 	end
 
+	if data.onPlayAction then
+		card.addTag('onPlayAction')
+	end
+
+	ProjectActionCancelClean(pcolor)
+
 	Wait.time(|| updateProductions(pcolor),1)
 	if gstate(pcolor,'projectLimit') < 1 then
+		ProjectActionClean(pcolor)
 		Wait.time(|| setReady(pcolor,true),3)
 	end
 end
@@ -1207,12 +1215,12 @@ function startNextPhase()
 	REACH_OCEAN = false
 	if CURRENT_PHASE > 0 then CURRENT_PHASES[CURRENT_PHASE] = false end
 	CURRENT_PHASE = getNextPhase()
+	doActionPhase()
 	if CURRENT_PHASE == 0 then
 		broadcastToAll('All Phases completed',COL_MSG)
 		setNotes('Choose your Phase')
 		newRound()
 	else
-		doActionPhase()
 		Wait.frames(|| broadcastToAll('New Phase: ' .. PHASE_NAMES[CURRENT_PHASE] ,COL_MSG),100)
 		setNotes("Current Phase: " .. PHASE_NAMES[CURRENT_PHASE])
 	end
@@ -1220,8 +1228,12 @@ end
 
 function doActionPhase()
 	for _,pcolor in ipairs(playersInGame()) do
+		ProjectActionClean(pcolor)
+		ProjectActionCancelClean(pcolor)
+
 		if 'Development' == PHASE_NAMES[CURRENT_PHASE] then
 			astate(pcolor, 'projectLimit', 1)
+			ProjectActionOnPlay(pcolor)
 		end
 
 		if 'Construction' == PHASE_NAMES[CURRENT_PHASE] then
@@ -1229,6 +1241,7 @@ function doActionPhase()
 			if hasActivePhase(pcolor,2) then limit = 2 end
 
 			astate(pcolor, 'projectLimit', limit)
+			ProjectActionOnPlay(pcolor)
 		end
 
 		if PhaseIsAction() then
@@ -1244,13 +1257,6 @@ function doActionPhase()
 				if CARDS[gnote(card)]['action'] then
 					ProjectActionButtonCreate(card)
 				end
-			end
-		end
-
-		if not PhaseIsAction() then
-			local activatedCards = gtags({'c'..pcolor, 'Blue', 'activated'})
-			for _,card in pairs(activatedCards) do
-				card.clearButtons()
 			end
 		end
 
@@ -2091,6 +2097,12 @@ function playTag(pcolor,card)
 	local data = CARDS[gnote(card)]
 
 	amodList(pcolor, data.afterEffects or {})
+
+	zmod(pcolor, 'payCardTemp')
+	-- reactivate onPlayAction cards if projectLimit not reached
+	if gstate(pcolor,'projectLimit') > 0 then
+		ProjectActionOnPlay(pcolor)
+	end
 end
 
 function geffects(pcolor)
@@ -2107,6 +2119,13 @@ end
 function gmod(pcolor,effect)
 	local effects = geffects(pcolor)
 	return effects[effect] or 0
+end
+
+function zmod(pcolor,effect)
+	local mod = gmod(pcolor,effect)
+	if type(mod) == 'number' then
+		amod(pcolor,effect,-mod)
+	end
 end
 
 function amod(pcolor,effect,add)

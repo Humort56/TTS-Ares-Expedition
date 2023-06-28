@@ -5,7 +5,7 @@ function ProjectActionButtonCreate(card)
     })
 end
 
-function ProjectActionChoiceButtonCreate(card, color)
+function ProjectActionChoiceButtonCreate(card)
     card.createButton({
         click_function="ProjectActionActivate", position={-0.62,0.6,1.02}, height=300, width=350,
         color={1,0,1,0.9}, scale={1,1,1}, tooltip="Activate"
@@ -15,6 +15,37 @@ end
 function ProjectActionButtonRemove(card)
     for _,btn in pairs(card.getButtons() or {}) do
         if 'ProjectActionActivate' == btn.click_function then
+            card.removeButton(btn.index)
+        end
+    end
+end
+
+function ProjectActionClean(pcolor)
+    local cards = gtags({'c'..pcolor,'onPlayAction'})
+
+    for _,card in pairs(cards) do
+        ProjectActionButtonRemove(card)
+    end
+end
+
+function ProjectActionCancelClean(pcolor)
+    local cards = gtag('c'..pcolor)
+
+    for _,card in pairs(cards) do
+        ProjectActionCancelButtonRemove(card)
+    end
+end
+
+function ProjectActionCancelButtonCreate(card)
+    card.createButton({
+        click_function="ProjectActionCancel", position={-0.62,0.6,1.02}, height=300, width=350,
+        color={1,0,0,0.9}, scale={1,1,1}, tooltip="Cancel"
+    })
+end
+
+function ProjectActionCancelButtonRemove(card)
+    for _,btn in pairs(card.getButtons() or {}) do
+        if 'ProjectActionCancel' == btn.click_function then
             card.removeButton(btn.index)
         end
     end
@@ -30,7 +61,7 @@ function ProjectActionActivate(card, pcolor, alt)
 
         ProjectActionEnd(pcolor)
     else
-        local action = CARDS[name]['action']
+        local action = CARDS[name]['action'] or CARDS[name]['onPlayAction']
 
         local abort = ProjectActionHandle(pcolor, action, card)
         if abort then return end
@@ -52,7 +83,41 @@ function ProjectActionActivate(card, pcolor, alt)
     end
 end
 
-function ProjectActionHandle(pcolor, action, card)
+function ProjectActionCancel(card, pcolor, alt)
+    local cancelActions = gstate(pcolor, 'cancelAction')
+    local name = gnote(card)
+
+    if not cancelActions[name] then
+        -- error no cancel for this action
+    end
+
+    local cancelAction = cancelActions[name]
+    ProjectActionHandle(pcolor, cancelAction, card, true)
+
+    ProjectActionCancelButtonRemove(card)
+    ProjectActionChoiceButtonCreate(card)
+end
+
+function ProjectActionOnPlay(pcolor)
+    local cards = gtags({'c'..pcolor,'onPlayAction'})
+
+    for _,card in pairs(cards) do
+        local name = gnote(card)
+        ProjectActionChoiceButtonCreate(card)
+    end
+end
+
+function ProjectActionCancelClean(pcolor)
+    local cards = gtag('c'..pcolor)
+
+    for _,card in pairs(cards) do
+        ProjectActionCancelButtonRemove(card)
+    end
+end
+
+function ProjectActionHandle(pcolor, action, card, cancel)
+    local cancelAction = {profit={}}
+
     for cost,value in pairs(action.cost or {}) do
 		if contains(RESOURCES, cost) then
 			local res = getRes(pcolor, cost)
@@ -98,6 +163,7 @@ function ProjectActionHandle(pcolor, action, card)
 
 			printToColor('You paid '..trueValue..' '..cost..' to use this action', pcolor)
 			addRes(pcolor, -trueValue, cost)
+            cancelAction.profit[cost] = trueValue
 		end
 
         if 'Token' == cost then
@@ -113,6 +179,7 @@ function ProjectActionHandle(pcolor, action, card)
                     end
 
                     TokenAdd(pcolor, card, -costValue)
+                    cancelAction.profit.Token = {where='self',value=costValue}
                 end
             end
         end
@@ -131,13 +198,21 @@ function ProjectActionHandle(pcolor, action, card)
                 if 'self' ~= value.where then
 				    tokenCard = gcard(pcolor, value.where)
                 end
-				TokenAdd(pcolor, tokenCard, 1)
+				TokenAdd(pcolor, tokenCard, value.value or 1, true)
 			else
 				TokenSelect(pcolor, value)
                 ProjectActionButtonRemove(card)
                 ProjectActionInUse(pcolor, card, true)
 			end
 		end
+        if 'effects' == profit then
+            for effect,effectValue in pairs(value) do
+                amod(pcolor,effect,effectValue)
+                local effects = cancelAction['profit']['effects'] or {}
+                effects[effect] = -effectValue
+                cancelAction.profit['effects'] = effects
+            end
+        end
 	end
 
 	if hasActivePhase(pcolor,3) then
@@ -161,6 +236,14 @@ function ProjectActionHandle(pcolor, action, card)
 			end
 		end
 	end
+
+    if cancel ~= true then
+        local cancelActions = gstate(pcolor, 'cancelAction')
+        if cancelActions == 0 then cancelActions = {} end
+
+        cancelActions[gnote(card)] = cancelAction
+        astate(pcolor,'cancelAction', cancelActions)
+    end
 end
 
 function ProjectActionGetInUse(pcolor, name)
@@ -194,6 +277,8 @@ function ProjectActionRecreate(pcolor, card)
     if PhaseIsAction() then
         -- if limit is not reached
         ProjectActionButtonCreate(card)
+    elseif card.hasTag('onPlayAction') then
+        ProjectActionCancelButtonCreate(card)
     else
         local queue = ChoiceQueueGet(pcolor)
 

@@ -1,4 +1,4 @@
-function TokenAdd(pcolor, card, add)
+function TokenAdd(pcolor, card, add, cancel)
 	local add = add or 1
 	local name = gnote(card)
 	local tokenType = CARDS[name]['tokenType']
@@ -18,7 +18,9 @@ function TokenAdd(pcolor, card, add)
             newToken.setPosition(tokenPos)
         end
 
-        TokenOnPlay(pcolor, tokenType)
+        if cancel ~= true then
+            TokenOnPlay(pcolor, tokenType)
+        end
     elseif add < 0 then
         local value = -add
         local tokenCount = TokenCount(card) 

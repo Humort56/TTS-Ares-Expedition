@@ -328,6 +328,11 @@ local Cards = {
             onPlayPlant={Token={where='AnaerobicMicroorganisms'}},
             onPlayMicrobe={Token={where='AnaerobicMicroorganisms'}},
             onPlayAnimal={Token={where='AnaerobicMicroorganisms'}}
+        },
+        onPlayAction={
+            where='AnaerobicMicroorganisms',
+            cost={Token={where='self',value=2}},
+            profit={effects={payCardTemp=-10}}
         }
     }, -- when playing a card, -2microbe => -10MC 
     SpaceStation = {name='Space Station', cost=14, production={Titan={Static=1}}, vp=1},
@@ -403,7 +408,15 @@ local Cards = {
     Insects = {name='Insects', cost=10, production={Plant={Symbol={Plant=1}}}},
     BeamFromAThoriumAsteroid = {name='Beam from a Thorium Asteroid', cost=23, production={Plant={Static=1},Heat={Static=3}}, req={Symbol={Jovian=1}}, vp=1},
     Bushes = {name='Bushes', cost=13, production={Plant={Static=2}},instant={Plant=2}, req={Temperature={range='Red',bound='Lower'}}},
-    RestructuredResources = {name='Restructured Resources', cost=7}, --effect: play a card, may spend 1 plant for -5MC
+    RestructuredResources = {
+        name='Restructured Resources',
+        cost=7,
+        onPlayAction={
+            where='RestructuredResources',
+            cost={Plant=1},
+            profit={effects={payCardTemp=-5}}
+        }
+    },
     GanymedeShipyard = {name='Ganymede Shipyard', cost=17, production={Titan={Static=2}}},
     Research = {name='Research', cost=5, instant={Cards=2}},
     GiantSpaceMirror = {name='Giant Space Mirror', cost=13, production={Heat={Static=3}}},
