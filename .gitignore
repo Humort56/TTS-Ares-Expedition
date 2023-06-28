@@ -3,6 +3,7 @@
 !Global.-1.lua
 !cards.lua
 !choice.lua
+!project.lua
 !projectAction.lua
 !token.lua
 !utilityTags.lua
