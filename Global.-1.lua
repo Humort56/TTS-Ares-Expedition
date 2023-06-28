@@ -167,8 +167,9 @@ function stActBuyForest(board,pcolor,alt)
 			sendError('Oxygen is at maximun',pcolor)
 		end
 	else
-		addRes(pcolor,-20)
-		printToColor('You paid 20 MC to gain a forest VP',pcolor)
+		local cost = 20 + gmod(pcolor,'payStandardAction')
+		addRes(pcolor,-cost)
+		printToColor('You paid '..cost..' MC to gain a forest VP',pcolor)
 		plantForest(pcolor)
 	end
 end
@@ -191,8 +192,9 @@ function stActBuyTemp(board,pcolor,alt)
 	if pcolor != getOwner(board) then sendError('This board is not yours',pcolor) return end
 	if getTemperature() == MAX_TEMP and not REACH_TEMP then sendError('Temperature is at maximum',pcolor) return end
 	if not alt then
-		addRes(pcolor,-14)
-		printToColor('You paid 14 MC to raise the temperature',pcolor)
+		local cost = 14 + gmod(pcolor,'payStandardAction')
+		addRes(pcolor,-cost)
+		printToColor('You paid '..cost..' MC to raise the temperature',pcolor)
 	end
 	incTemperature(1,pcolor)
 end
@@ -213,8 +215,9 @@ function stActBuyOcean(board,pcolor,alt)
 	if pcolor != getOwner(board) then sendError('This board is not yours',pcolor) return end
 	if #getDryOceans() == 0 and not REACH_OCEAN then sendError('All oceans have been flipped',pcolor) return end
 	if not alt then
-		addRes(pcolor,-15)
-		printToColor('You paid 15 MC to flip an ocean tile',pcolor)
+		local cost = 15 + gmod(pcolor,'payStandardAction')
+		addRes(pcolor,-cost)
+		printToColor('You paid '..cost..' MC to flip an ocean tile',pcolor)
 	end
 	flipOcean(pcolor)
 end
