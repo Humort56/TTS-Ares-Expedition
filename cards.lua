@@ -106,7 +106,36 @@ local Cards = {
         }},
         req={Oxygen={range='Red',bound='Lower'}}
     },
-    Decomposers = {name='Decomposers', cost=7, req={Oxygen={range='Red',bound='Lower'}}, vp=1}, --(Plant/Micro/Animal) => add microbe or remove microbe and draw
+    Decomposers = {
+        name='Decomposers',
+        cost=7,
+        tokenType='Microbe',
+        effects={
+          onPlayAnimal={choice={
+            name='Decomposers',
+            choices={
+                {Token={where='self'}},
+                {Action={cost={Token={where='self', value=1}},profit={Cards=1}}}
+            }
+          }},
+          onPlayPlant={choice={
+            name='Decomposers',
+            choices={
+                {Token={where='self'}},
+                {Action={cost={Token={where='self', value=1}},profit={Cards=1}}}
+            }
+          }},
+          onPlayMicrobe={choice={
+            name='Decomposers',
+            choices={
+                {Token={where='self'}},
+                {Action={cost={Token={where='self', value=1}},profit={Cards=1}}}
+            }
+          }},
+        },
+        req={Oxygen={range='Red',bound='Lower'}},
+        vp=1
+    },
     ExtendedResources = {name='Extended Resources', cost=10, effects={researchKeep=1}},
     BreathingFilters = {name='Breathing Filters', cost=9, req={Oxygen={range='Yellow',bound='Lower'}}, vp=2},
     AsteroidMining = {name='Asteroid Mining', cost=28, production={Titan={Static=2}}, vp=2},
