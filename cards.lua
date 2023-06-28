@@ -9,20 +9,25 @@ local Cards = {
     Teractor = {MC=51, effects={payEarth=-3}},
     Ecoline = {MC=27, PlantProduction=1, effects={plantForest=-1}},
     -- Corporations: Standard
-    Inventrix = {MC=33,Cards=3,effects={conditionPuffer=1}}, -- todo
+    Inventrix = {MC=33,Cards=3,effects={conditionPuffer=1}},
     UnitedNationsMarsInitiative = {name='United Nations Mars Initiative',MC=35,effects={}},	-- 6 MC → TR on first time/phase
-    SaturnSystems = {name='Saturn Systems',MC=24, TitanProduction=1,effects={onPlayJovian={TR=1}}}, -- todo
+    SaturnSystems = {name='Saturn Systems',MC=24, TitanProduction=1,effects={onPlayJovian={TR=1}}},
     ThorGate = {MC=45, HeatProduction=1, effects={payPower=-3}},
     PhoboLog = {MC=20, TitanProduction=1, effects={titanValue=1} },
     TharsisRepublic = {name='Tharsis Republic', MC=40, effects={researchDraw=1,researchKeep=1}},
     CrediCor = {MC=48, effects={payTwenty=-4} },
-    MiningGuild = {name='Mining Guild', MC=27, SteelProduction=1, effects={onPlaySteelProduction={TR=1}}}, -- todo
+    MiningGuild = {name='Mining Guild', MC=27, SteelProduction=1, effects={onPlaySteelProduction={TR=1}}},
     -- Corporations: Promo
-    Arklight = {MC=43, Animals=2, vpAnimals=0.5, onPlayPlant={Animal=1}, onPlayAnimal={Animal=1} },
+    Arklight = {MC=43, Animals=2, vpAnimals=0.5, onPlayPlant={Animal=1}, onPlayAnimal={Animal=1}}, --todo
     DevTechs = {MC=40, effects={payGreen=-2}, drawChoice=5, manually='Choose a green card from your left hand and discard the other cards.' },
     LaunchStarIncorporated = {name='Launch Star Incorporated', MC=36, effects={payBlue=-3}, revealCards={Color='Blue'}},
-    Celestior = {MC=50, action='todo',  },
-    MaiNiProductions = {name='Mai-Ni Productions', MC=48, onPlayGreen={Cards=1,manually='Discard a card'}, manually='Play a card from your hand that costs 12 MC or less without paying it.' },
+    Celestior = {MC=50, action='todo',  }, --todo
+    MaiNiProductions = { -- todo
+        name='Mai-Ni Productions',
+        MC=48,
+        onPlayGreen={Cards=1,manually='Discard a card'},
+        manually='Play a card from your hand that costs 12 MC or less without paying it.'
+    },
     Zetasel = {MC=43, Cards=5, manually='Discard 4 cards', effects={onOcean={MC=2,Plant=2}}},
     -- Cards: Beginner Projects
     AcquiredCompany = {name='Acquired Company', cost=11, production={Cards={Static=1}}},
@@ -157,8 +162,20 @@ local Cards = {
     WorkCrews = {name='Work Crews', cost=5, state={projectLimit=1}, effects={payCardTemp=-11}},
     MethaneFromTitan = {name='Methane from Titan', cost=35, production={Plant={Static=2},Heat={Static=2}}, req={Oxygen={range='Red',bound='Lower'}}, vp=2},
     PhobosFalls = {name='Phobos Falls', cost=32, instant={Temperature=1,Ocean=1,Cards=2}, vp=1},
-    AutomatedFactories = {name='Automated Factories', cost=18, production={Cards={Static=1}}, state={projectLimit=1,freeGreenNineLess=1}, manually='Play another green project with a printed cost of 9MC or less for free'},
-    EosChasmaNationalPark = {name='Eos Chasma National Park', cost=16, production={MC={Static=2}}, instant={Plant=3}, req={Temperature={range='Red',bound='Lower'}}, vp=1}, --instant: 1 animal to another card
+    AutomatedFactories = {
+        name='Automated Factories',
+        cost=18,
+        production={Cards={Static=1}},
+        state={projectLimit=1,freeGreenNineLess=1},
+        manually='Play another green project with a printed cost of 9MC or less for free'
+    },
+    EosChasmaNationalPark = {
+        name='Eos Chasma National Park',
+        cost=16,
+        production={MC={Static=2}},
+        instant={Plant=3,Token={type='Animal',value=2}},
+        req={Temperature={range='Red',bound='Lower'}},
+        vp=1},
     CircuitBoardFactory = {name='Circuit Board Factory', cost=14, action={profit={Cards=1}}},
     SmallAnimals = {
         name='Small Animals',
@@ -190,7 +207,11 @@ local Cards = {
     GreatDam = {name='Great Dam', cost=12, production={Heat={Static=2}}, req={Ocean={value=2,bound='Lower'}}, vp=1},
     Heather = {name='Heather', cost=14, production={Plant={Static=1}}, instant={Plant=1}, vp=1},
     WavePower = {name='Wave Power', cost=9, production={Heat={Static=3}}, req={Ocean={value=3,bound='Lower'}}},
-    CEOsFavoriteProject = {name="CEO's Favorite Project", cost=3}, -- instant: 2 ressources to a resource card
+    CEOsFavoriteProject = {
+        name="CEO's Favorite Project",
+        cost=3,
+        instant={Token={type={'Animal','Microbe','Science'},value=2}}
+    },
     EcologicalZone = {
         name='Ecological Zone',
         cost=11,
@@ -227,14 +248,14 @@ local Cards = {
             {Action={profit={Plant=1}}}
         }},
         req={Temperature={range='Purple',bound='Upper'}}
-    }, --action: 1plant or 1microbe
+    },
     DeepWellHeating = {name='Deep Well Heating', cost=14, production={Heat={Static=1}}, instant={Temperature=1}},
     AssetLiquidation = {
         name='Asset Liquidation',
         cost=0,
         state={projectLimit=1},
         action={cost={TR=1},profit={Cards=3}}
-    }, -- action: 1TR for 3 cards
+    },
     UnitedPlanetaryAlliance = {name='United Planetary Alliance', cost=11, effects={researchDraw=1,researchKeep=1}},
     GeneRepair = {name='Gene Repair', cost=15, production={MC={Static=2}}, vp=2},
     AtmosphereFiltering = {name='Atmosphere Filtering', cost=6, instant={Oxygen=1}, req={Symbol={Science=2}}},
@@ -257,19 +278,30 @@ local Cards = {
         vp={token=1}
     },
     PowerSupplyConsortium = {name='Power Supply Consortium', cost=12, production={MC={Static=2},Heat={Static=1}}},
-    TollStation = {name='Toll Station', cost=16, production={MC={Static=3}}, state={projectLimit=1,freeGreenNineLess=1}, manually='Play another green project with a printed cost of 9MC or less for free'},
+    TollStation = {
+        name='Toll Station',
+        cost=16,
+        production={MC={Static=3}},
+        state={projectLimit=1,freeGreenNineLess=1},
+        manually='Play another green project with a printed cost of 9MC or less for free'
+    },
     LocalHeatTrapping = {
         name='Local Heat Trapping',
         cost=0,
         instant={Plant=4,Heat=-3,Token={type={'Animal','Microbe'},value=2}},
         req={Resources={Heat=3}}
-    }, -- instant: add 2 animals or microbe
+    },
     SpecialDesign = {name='Special Design', cost=3, effects={conditionPufferTemp=1}, state={projectLimit=1}},
     ProtectedValley = {name='Protected Valley', cost=22, production={MC={Static=2}}, instant={Forest=1}},
     AdvancedEcosystems = {name='Advanced Ecosystems', cost=10, req={Symbol={Animal=1,Microbe=1,Plant=1}}, vp=3},
     ConvoyFromEuropa = {name='Convoy from Europa', cost=14, instant={Cards=1,Ocean=1}},
     DustyQuarry = {name='Dusty Quarry', cost=2, production={Steel={Static=1}}, req={Ocean={value=3,bound='Upper'}}},
-    ThinkTank = {name='Think Tank', cost=13, action={cost={MC=2},profit={Cards=1}}}, -- 1vp per 3 (Blue) Cards
+    ThinkTank = {
+        name='Think Tank',
+        cost=13,
+        action={cost={MC=2},profit={Cards=1}},
+        vp={Cards={Blue=0.34}}
+    },
     InvestmentLoan = {name='Investment Loan', cost=1, instant={MC=10,TR=-1}, req={TR=1}, vp=1},
     ConservedBiome = {name='Conserved Biome', cost=25, action={profit={Token={'Animal','Microbe'}}}, vp={forest=0.5}},
     RegolithEaters = {
@@ -314,7 +346,12 @@ local Cards = {
     PowerGrid = {name='Power Grid', cost=8, production={MC={Symbol={Power=1}}}},
     Windmills = {name='Windmills', cost=10, production={Heat={Symbol={Power=1}}}, vp=1},
     TropicalResort = {name='Tropical Resort', cost=19, production={MC={Static=4}}, instant={Heat=-5}, req={Resources={Heat=5}}, vp=2},
-    Astrofarm = {name='Astrofarm', cost=21, production={Plant={Static=1},Heat={Static=3}}}, --instant: 2microbes to another card
+    Astrofarm = {
+        name='Astrofarm',
+        cost=21,
+        production={Plant={Static=1},Heat={Static=3}},
+        instant={Token={type='Microbe',value=2}}
+    },
     TrappedHeat = {name='Trapped Heat', cost=20, production={Heat={Static=2}}, instant={Ocean=1}, req={Temperature={range='Red',bound='Lower'}}},
     ReleaseOfInertGases = {name='Release of Inert Gases', cost=16, instant={TR=2}},
     LightningHarvest = {name='Lightning Harvest', cost=13, production={MC={Symbol={Science=1}}}, vp=1},
@@ -334,7 +371,7 @@ local Cards = {
             cost={Token={where='self',value=2}},
             profit={effects={payCardTemp=-10}}
         }
-    }, -- when playing a card, -2microbe => -10MC 
+    },
     SpaceStation = {name='Space Station', cost=14, production={Titan={Static=1}}, vp=1},
     FuelFactory = {name='Fuel Factory', cost=9, production={MC={Static=1},Titan={Static=1}}, instant={Heat=-3}, req={Resources={Heat=3}}},
     Blueprints = {name='Blueprints', cost=17, production={Cards={Static=1},MC={Static=2}}},
@@ -370,7 +407,7 @@ local Cards = {
                 }
             }}
         }
-    }, -- (Plant/Microbe/Animal): 1Plant or microbe/animal to another card
+    },
     AICentral = {name='AI Central', cost=22, action={profit={Cards=2}}, req={Symbol={Science=5}}, vp=2},
     Worms = {name='Worms', cost=11, production={Plant={Symbol={Microbe=1}}}, req={Oxygen={range='Red',bound='Lower'}}},
     Greenhouses = {name='Greenhouses', cost=11, req={Temperature={range='Yellow',bound='Lower'}}}, --action: 1-4Heat => 1-4Plant
