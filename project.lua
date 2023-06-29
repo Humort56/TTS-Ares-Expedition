@@ -137,3 +137,53 @@ function ProjectCondition(pcolor, element, condition)
 
     return true
 end
+
+function ProjectInstant(pcolor, card, instantData)
+	for instantType,instantValue in pairs(instantData) do
+		local gainValue = 0
+
+		if instantType == 'Token' then
+			local tokens = instantValue
+
+			if tokens.where or tokens.type then
+				tokens = {tokens}
+			end
+
+			for _,token in pairs(tokens) do
+				log(token)
+				if token.where then
+					if token.where == 'self' then
+						TokenAdd(pcolor, card, token.value or 1)
+					end
+				end
+
+				if token.type then
+					ChoiceQueueInsert(pcolor, card, {{Token=token}})
+				end
+			end
+		elseif 'table' == type(instantValue) then
+			for type,typeData in pairs(instantValue) do
+				if 'Symbol' == type then
+					for symbol,symbolGain in pairs(typeData) do
+						gainValue = getTagCount(symbol,pcolor) * symbolGain
+						if card.hasTag(symbol) then gainValue = gainValue + symbolGain end
+					end
+				end
+			end
+		elseif 'number' == type(instantValue) then
+			gainValue = instantValue
+		end
+
+		if contains(TERRAFORMING, instantType) then
+			_G['inc'..instantType](gainValue,pcolor)
+		end
+
+		if contains(RESOURCES, instantType) then
+			addRes(pcolor,gainValue,instantType)
+			printToColor(string.format(
+				"Gained %d %s(s) from your project: [%s] %s", 
+				gainValue, instantType, CardColorHex(card), CARDS[gnote(card)].name
+			), pcolor)
+		end
+	end
+end

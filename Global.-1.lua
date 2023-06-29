@@ -3,6 +3,7 @@
 -- MOD ID	2931011437
 
 CARDS = require("cards")
+require("card")
 require("choice")
 require("project")
 require("projectAction")
@@ -595,35 +596,6 @@ function activateProject(card,pcolor,alt)
 	), pcolor)
 
 	activateProjectProduction(card, pcolor)
-
-	for inst,instGain in pairs(data.instant or {}) do
-		local gainValue = 0
-
-		if 'table' == type(instGain) then
-			for type,typeData in pairs(instGain) do
-				if 'Symbol' == type then
-					for symbol,symbolGain in pairs(typeData) do
-						gainValue = getTagCount(symbol,pcolor) * symbolGain
-						if card.hasTag(symbol) then gainValue = gainValue + symbolGain end
-					end
-				end
-			end
-		elseif 'number' == type(instGain) then
-			gainValue = instGain
-		end
-
-		if contains(TERRAFORMING, inst) then
-			_G['inc'..inst](gainValue,pcolor)
-		end
-
-		if contains(RESOURCES, inst) then
-			addRes(pcolor,gainValue,inst)
-			printToColor(string.format(
-				"Gained %d %s(s) from your project: [%s] %s", 
-				gainValue, inst, cardHex, cardName
-			), pcolor)
-		end
-	end
 
 	if data.revealCards then
 		revealCards(pcolor, data.revealCards)
@@ -2095,6 +2067,8 @@ function playTag(pcolor,card)
 	end
 	
 	local data = CARDS[gnote(card)]
+
+	ProjectInstant(pcolor, card, data.instant or {})
 
 	amodList(pcolor, data.afterEffects or {})
 

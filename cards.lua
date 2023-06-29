@@ -229,7 +229,17 @@ local Cards = {
     InterstellarColonyShip = {name='Interstellar Colony Ship', cost=20, req={Symbol={Science=4}}, vp=4},
     ColonizerTrainingCamp = {name='Colonizer Training Camp', cost=10, req={Oxygen={range='Red',bound='Upper'}}, vp=2},
     RedraftedContracts = {name='Redrafted Contracts', cost=4}, -- action: discard 1-3, draw that many
-    ImportedNitrogen = {name='Imported Nitrogen', cost=20, instant={TR=1,Plant=4}}, -- instant: 2 animals and 3 microbes
+    ImportedNitrogen = {
+        name='Imported Nitrogen',
+        cost=20,
+        instant={
+            TR=1,
+            Plant=4,
+            Token={
+                {type='Microbe',value=3},
+                {type='Animal',value=2}
+            }
+        }},
     WaterImportFromEuropa = {name='Water Import from Europa', cost=22,  action={cost={MC={base=12,reductionRes='Titan',reductionVal=1}}, profit={Ocean=1}}}, -- 1vp per (Jovian)
     AssemblyLines = {name='Assembly Lines', cost=13, effects={gainForCustomAction=1}},
     SubterraneanReservoir = {name='Subterranean Reservoir', cost=10, instant={Ocean=1}},
@@ -438,8 +448,8 @@ local Cards = {
             {Token={where='self'}},
             {Action={cost={Token={where='self', value=3}},profit={Ocean=1}}}
         }},
-        manually='Add 3 microbes to this project'
-    }, --instant: 3 microbe
+        instant={Token={where='self',value=3}}
+    },
     AdvancedScreeningTechnology = {name='Advanced Screening Technology', cost=6}, --action: reveal 3 cards, keep one card with (Plant/Science)
     DesignedMicroorganisms = {name='Designed Microorganisms', cost=15, production={Plant={Static=2}}, req={Temperature={range='Red',bound='Upper'}}},
     Insects = {name='Insects', cost=10, production={Plant={Symbol={Plant=1}}}},

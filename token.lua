@@ -70,12 +70,20 @@ function TokenButtonRemove(card)
 end
 
 function TokenButtonActivate(card, pcolor, alt)
-    TokenAdd(pcolor, card, 1)
+    local value = gstate(pcolor,'tokenAdd')
+
+    if value == 0 then value = 1 end
+
+    TokenAdd(pcolor, card, value)
 
     ProjectActionEnd(pcolor)
 end
 
-function TokenSelect(pcolor, tokenTypes)
+function TokenSelect(pcolor, tokenTypes, value)
+    local tokenValue = value or 1
+
+    astate(pcolor,'tokenAdd', tokenValue)
+
     if 'string' == type(tokenTypes) then
         tokenTypes = {tokenTypes}
     end

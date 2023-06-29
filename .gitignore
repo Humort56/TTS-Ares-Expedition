@@ -2,6 +2,7 @@
 !.gitignore
 !Global.-1.lua
 !cards.lua
+!card.lua
 !choice.lua
 !project.lua
 !projectAction.lua

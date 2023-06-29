@@ -19,7 +19,7 @@ function ChoiceSelect(pcolor, card, choices)
         if choice.Token then
             local token = choice.Token
             if token.type then
-                TokenSelect(pcolor, token.type)
+                TokenSelect(pcolor, token.type, token.value or 1)
             end
 
             if token.where then
