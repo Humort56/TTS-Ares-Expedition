@@ -188,7 +188,7 @@ local Cards = {
         vp={token=0.5}
     },
     Trees = {name='Trees', cost=17, production={Plant={Static=3}}, instant={Plant=1}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
-    AirborneRadiation = {name='Airborne Radiation', cost=15, production={Heat={Static=2}}, instant={Temperature=1}, req={Oxygen={range='Red',bound='Lower'}}},
+    AirborneRadiation = {name='Airborne Radiation', cost=15, production={Heat={Static=2}}, instant={Oxygen=1}, req={Oxygen={range='Red',bound='Lower'}}},
     GiantIceAsteroid = {name='Giant Ice Asteroid', cost=36, instant={Temperature=2,Ocean=2}},
     BiomassCombustors = {name='Biomass Combustors', cost=15, production={Heat={Static=5}}, instant={Plant=-2}, req={Resources={Plant=2}}},
     LakeMarineris = {name='Lake Marineris', cost=17, instant={Ocean=2}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
