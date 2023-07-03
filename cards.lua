@@ -274,7 +274,7 @@ local Cards = {
     SymbioticFungus = {
         name='Symbiotic Fungus',
         cost=3,
-        profit={Token='Microbe'},
+        action={profit={Token='Microbe'}},
         req={Temperature={range='Red',bound='Lower'}}
     },
     Livestock = {
@@ -467,7 +467,15 @@ local Cards = {
     GanymedeShipyard = {name='Ganymede Shipyard', cost=17, production={Titan={Static=2}}},
     Research = {name='Research', cost=5, instant={Cards=2}},
     GiantSpaceMirror = {name='Giant Space Mirror', cost=13, production={Heat={Static=3}}},
-    VolcanicPools = {name='Volcanic Pools', cost=17, action={cost={MC={base=12,reductionSymbol='Power',reductionVal=1}}, profit={Ocean=1}}, vp=1},
+    VolcanicPools = {
+        name='Volcanic Pools',
+        cost=17,
+        action={
+            cost={MC={base=12,reductionSymbol='Power',reductionVal=1}},
+            profit={Ocean=1}
+        },
+        vp=1
+    },
     CaretakerContract = {name='Caretaker Contract', cost=18, action={cost={Heat=8},profit={TR=1}}, vp=2},
     DevelopmentCenter = {name='Development Center', cost=7, action={cost={Heat=2},profit={Cards=1}}},
     MoholeArea = {name='Mohole Area', cost=18, production={Heat={Static=4}}},
