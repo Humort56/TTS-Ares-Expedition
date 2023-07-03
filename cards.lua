@@ -449,8 +449,9 @@ local Cards = {
     Birds = {
         name='Birds',
         cost=15,
+        tokenType='Animal',
         action={
-            profit={Token={where='Birds'}}
+            profit={Token={where='self'}}
         },
         req={Oxygen={range='White',bound='Lower'}},
         vp={token=1}
