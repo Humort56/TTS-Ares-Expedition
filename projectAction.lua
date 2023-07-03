@@ -184,6 +184,10 @@ function ProjectActionHandle(pcolor, action, card, cancel)
                 end
             end
         end
+
+        if 'TR' == cost then
+            addTR(pcolor, -value)
+        end
 	end
 
 	for profit, value in pairs(action.profit or {}) do
