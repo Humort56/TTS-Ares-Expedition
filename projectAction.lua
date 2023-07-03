@@ -185,6 +185,21 @@ function ProjectActionHandle(pcolor, action, card, cancel)
             end
         end
 
+        if 'Discard' == cost then
+            local cards = Player[pcolor].getHandObjects(HAND_INDEX_DRAW)
+
+            if #cards == 0 then
+                sendError('You do not have any card(s) ready to discard')
+                return true
+            elseif #cards > value then
+                sendError('You have too many cards ready to discard')
+                return true
+            end
+
+            astate(pcolor, 'discardedCards', #cards)
+            discardHand(pcolor, false)
+        end
+
         if 'TR' == cost then
             addTR(pcolor, -value)
         end
@@ -192,7 +207,11 @@ function ProjectActionHandle(pcolor, action, card, cancel)
 
 	for profit, value in pairs(action.profit or {}) do
 		if contains(RESOURCES, profit) then
-			addRes(pcolor, value, profit)
+            if value == 'discarded' then
+                value = gstate(pcolor,'discardedCards')
+                astate(pcolor,'discardedCards', 0)
+            end
+			Wait.frames(|| addRes(pcolor, value, profit), 1)
 		end
 		if contains(TERRAFORMING,profit) then
 			_G['inc'..profit](value, pcolor)

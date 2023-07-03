@@ -53,7 +53,15 @@ local Cards = {
     CommercialImports = {name='Commercial Imports', cost=36, production={Cards={Static=1}, Heat={Static=2}, Plant={Static=2}}},
     ProcessingPlant = {name='Processing Plant', cost=19, production={Steel={Static=2}}, revealCards={Symbol='Building'}, vp=1},
     SelfReplicatingBacteria = {name='Self-Replicating Bacteria', cost=8}, -- action: add microbe or -5 microbe for -25MC on a card
-    MatterGenerator = {name='Matter Generator', cost=13, instant={Cards=2}}, -- action: discard a card for 6 mc
+    MatterGenerator = {
+        name='Matter Generator',
+        cost=13,
+        instant={Cards=2},
+        action={
+            cost={Discard=1},
+            profit={MC=6}
+        }
+    },
     ProgressivePolicies = {name='Progressive Policies', cost=8, action={cost={MC={base=10,reductionCondition={Event=4},reductionVal=5}},profit={Oxygen=1}}},
     FilterFeeders = {
         name='Filter Feeders',
@@ -147,7 +155,15 @@ local Cards = {
     ImmigrationShuttles = {name='Immigration Shuttles', cost=20, production={MC={Static=3}}}, -- 1vp per 2 (Earth Badge)
     MassConverter = {name='Mass Converter', cost=20, production={Heat={Static=3},Titan={Static=1}}, req={Symbol={Science=4}}, vp=2},
     BalancedPortfolios = {name='Balanced Portfolios', cost=8, production={MC={Static=3}}, instant={TR=-1}, req={TR=1}, vp=1},
-    FarmingCoops = {name='Farming Co-ops', cost=15, instant={Plant=3}}, -- action: discard a card, then gain 3 plants
+    FarmingCoops = {
+        name='Farming Co-ops',
+        cost=15,
+        instant={Plant=3},
+        action={
+            cost={Discard=1},
+            profit={Plant=3}
+        }
+    },
     InterplanetaryRelations = {name='Interplanetary Relations', cost=35, effects={researchDraw=1,researchKeep=1}}, -- 1vp per 4cards
     BusinessContacts = {name='Business Contacts', cost=5, instant={Cards=4}, manually='Discard 2 cards'},
     GeothermalPower = {name='Geothermal Power', cost=8, production={Heat={Static=2}}},
@@ -228,7 +244,14 @@ local Cards = {
     StripMine = {name='Strip Mine', cost=12, production={Steel={Static=2},Titan={Static=1}}, instant={TR=-1}, req={TR=1}},
     InterstellarColonyShip = {name='Interstellar Colony Ship', cost=20, req={Symbol={Science=4}}, vp=4},
     ColonizerTrainingCamp = {name='Colonizer Training Camp', cost=10, req={Oxygen={range='Red',bound='Upper'}}, vp=2},
-    RedraftedContracts = {name='Redrafted Contracts', cost=4}, -- action: discard 1-3, draw that many
+    RedraftedContracts = {
+        name='Redrafted Contracts',
+        cost=4,
+        action={
+            cost={Discard=3},
+            profit={Cards='discarded'}
+        }
+    },
     ImportedNitrogen = {
         name='Imported Nitrogen',
         cost=20,
