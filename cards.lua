@@ -246,7 +246,15 @@ local Cards = {
     ImportedGHG = {name='Imported GHG', cost=8, production={Heat={Static=1}}, instant={Heat=5}},
     TerraformingGanymede = {name='Terraforming Ganymede', cost=28, instant={TR={Symbol={Jovian=1}}}, vp=2},
     SolarPower = {name='Solar Power', cost=10, production={Heat={Static=1}}, vp=1},
-    Solarpunk = {name='Solarpunk', cost=15,  action={cost={MC={base=15,reductionRes='Titan',reductionVal=2}}, profit={Forest=1}}, vp=1},
+    Solarpunk = {
+        name='Solarpunk',
+        cost=15,
+        action={
+            cost={MC={base=15,reductionRes='Titan',reductionVal=2}},
+            profit={Forest=1}
+        },
+        vp=1
+    },
     PowerPlant = {name='Power Plant', cost=3, production={Heat={Static=1}}},
     EnergyStorage = {name='Energy Storage', cost=18, production={Cards={Static=2}}, req={TR=7}},
     CompostingFactory = {name='Composting Factory', cost=13, effects={cardValue=1}, vp=1},
@@ -320,7 +328,7 @@ local Cards = {
         tokenType='Microbe',
         action={choice={
             {Token={where='self'}},
-            {Action={cost={Token={where='self', value=2},profit={Oxygen=1}}}}
+            {Action={cost={Token={where='self', value=2}},profit={Oxygen=1}}}
         }},
         req={Temperature={range='Red',bound='Lower'}}
     },
@@ -424,7 +432,15 @@ local Cards = {
     Satellites = {name='Satellites', cost=14, production={MC={Symbol={Space=1}}}},
     Ironworks = {name='Ironworks', cost=12, action={cost={Heat=4},profit={Oxygen=1}}},
     SolarTrapping = {name='Solar Trapping', cost=10, production={Heat={Static=1}}, instant={Cards=1,Heat=3}},
-    WoodBurningStoves = {name='Wood Burning Stoves', cost=13, instant={Plant=4}, action={cost={Plant={base=4,reductionAction=1}},profit={Temperature=1}}},
+    WoodBurningStoves = {
+        name='Wood Burning Stoves',
+        cost=13,
+        instant={Plant=4},
+        action={
+            cost={Plant={base=4,reductionAction=1}},
+            profit={Temperature=1}
+        }
+    },
     LowAtmoShields = {name='Low-Atmo Shields', cost=9, production={MC={Static=1},Heat={Static=2}}, req={Oxygen={range='Red',bound='Lower'}}},
     Moss = {name='Moss', cost=3, production={Plant={Static=1}}, instant={Plant=-1}, req={Ocean={value=3,bound='Lower'},Resources={Plant=2}}},
     RadSuits = {name='Rad Suits', cost=4, production={MC={Static=2}}, req={Ocean={value=2,bound='Lower'}}},
