@@ -143,7 +143,7 @@ function ProjectActionHandle(pcolor, action, card, cancel)
 						end
 
 						if contains(SYMBOLS, conditionType) then
-							condition = condition and (getTagCount(pcolor, conditionType) >= conditionValue)
+							condition = condition and (getTagCount(conditionType, pcolor) >= conditionValue)
 						end
 					end
 
