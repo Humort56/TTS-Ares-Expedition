@@ -131,7 +131,9 @@ function ProjectActionHandle(pcolor, action, card, cancel)
 				elseif value['reductionSymbol'] then
 					reduction = getTagCount(value['reductionSymbol'], pcolor) * value['reductionVal']
 				elseif value['reductionAction'] then
-					reduction = value['reductionAction']
+                    if hasActivePhase(pcolor,3) then
+					    reduction = value['reductionAction']
+                    end
 				elseif value['reductionCondition'] then
 					local condition = true
 
