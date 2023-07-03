@@ -127,7 +127,7 @@ function ProjectActionHandle(pcolor, action, card, cancel)
 				local reduction = 0
 
 				if value['reductionRes'] then
-					reduction = getRes(pcolor, value['reductionRes']) * value['reductionVal']
+					reduction = getProduction(pcolor, value['reductionRes']) * value['reductionVal']
 				elseif value['reductionSymbol'] then
 					reduction = getTagCount(value['reductionSymbol'], pcolor) * value['reductionVal']
 				elseif value['reductionAction'] then
