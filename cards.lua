@@ -370,7 +370,16 @@ local Cards = {
     AntiGravityTechnology = {name='Anti-Gravity Technology', cost=18, effects={onPlayCard={Heat=2,Plant=2}}, req={Symbol={Science=5}}, vp=3},
     DevelopedInfrastructure = {name='Developed Infrastructure', cost=12, action={cost={MC={base=10,reductionCondition={Blue=5},reductionVal=5}},profit={Temperature=1}}, vp=1},
     MedicalLab = {name='Medical Lab', cost=15, production={MC={Symbol={Building=0.5}}}, vp=1},
-    DecomposingFungus = {name='Decomposing Fungus', cost=10}, --instant: 2microbe, action: remove 1 animal or microbe for 3 plant
+    DecomposingFungus = {
+        name='Decomposing Fungus',
+        cost=10,
+        tokenType='Microbe',
+        instant={Token={where='self',value=2}},
+        action={
+            cost={Token={type={'Animal','Microbe'}}},
+            profit={Plant=3}
+        }
+    }, --instant: 2microbe, action: remove 1 animal or microbe for 3 plant
     IndustrialMicrobes = {name='Industrial Microbes', cost=9, production={Heat={Static=1},Steel={Static=1}}},
     Monocultures = {name='Monocultures', cost=6, production={Plant={Static=2}}, instant={TR=-1}, req={TR=1}},
     LargeConvoy = {name='Large Convoy', cost=36, instant={Ocean=1,Cards=2}, manually='Gain 5 plants or 3 animals', vp=2},
@@ -520,7 +529,21 @@ local Cards = {
     DevelopmentCenter = {name='Development Center', cost=7, action={cost={Heat=2},profit={Cards=1}}},
     MoholeArea = {name='Mohole Area', cost=18, production={Heat={Static=4}}},
     Archaebacteria = {name='Archaebacteria', cost=5, production={Plant={Static=1}}, req={Temperature={range='Purple',bound='Upper'}}},
-    MarsUniversity = {name='Mars University', cost=10, vp=1}, --effect: (Science): discard a card => (Plant)2 cards, else 1 cards
+    MarsUniversity = {
+        name='Mars University',
+        cost=10,
+        effects={
+            onPlayScience={Action={
+                cost={Discard=1},
+                profit={Cards={
+                    base=1,
+                    bonus=1,
+                    card={Symbol={Plant=1}}
+                }}
+            }}
+        },
+        vp=1
+    }, --effect: (Science): discard a card => (Plant)2 cards, else 1 cards
     CallistoPenalMines = {name='Callisto Penal Mines', cost=20, production={Cards={Static=1}}, vp=1},
     NitrogenRichAsteroid = {name='Nitrogen-Rich Asteroid', cost=30, instant={TR=2,Temperature=1}, manually='If you have more than 3 symbols Plant, gain 4 plants, else gain 2 plants'}, -- 2 plants, 3+(Plant) 4 Plant
     FusionPower = {name='Fusion Power', cost=7, production={Cards={Static=1}}, req={Symbol={Power=2}}},

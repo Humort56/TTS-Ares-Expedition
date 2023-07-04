@@ -654,6 +654,10 @@ function onPlay(pcolor, effects)
 			end
 		end
 
+		if 'Action' == effectType then
+			local card = gcard(pcolor,typeData.name)
+		end
+
 		if 'TR' == effectType then
 			addTR(pcolor, typeData)
 		end

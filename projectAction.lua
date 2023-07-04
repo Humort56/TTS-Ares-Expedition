@@ -188,6 +188,8 @@ function ProjectActionHandle(pcolor, action, card, cancel)
         if 'Discard' == cost then
             local cards = Player[pcolor].getHandObjects(HAND_INDEX_DRAW)
 
+            local discardedCards = {}
+
             if #cards == 0 then
                 sendError('You do not have any card(s) ready to discard')
                 return true
@@ -196,7 +198,11 @@ function ProjectActionHandle(pcolor, action, card, cancel)
                 return true
             end
 
-            astate(pcolor, 'discardedCards', #cards)
+            for _,card in pairs(cards) do
+                table.insert(discardedCards, gnote(card))
+            end
+
+            astate(pcolor, 'discardedCards', discardedCards)
             discardHand(pcolor, false)
         end
 
@@ -207,8 +213,36 @@ function ProjectActionHandle(pcolor, action, card, cancel)
 
 	for profit, value in pairs(action.profit or {}) do
 		if contains(RESOURCES, profit) then
+            if type(value) == 'table' then
+                local tempValue = value.base
+                local bonus = value.bonus
+                local condition = false
+
+                if value.card and 0 ~= gstate(pcolor, 'discardedCards') then
+                    local cardCondition = value.card
+                    local discardedCards = gstate(pcolor, 'discardedCards')
+                    local tempCondition = true
+                    for _,card in pairs(discardedCards) do
+                        for conditionType,conditionValue in pairs(cardCondition) do
+                            if conditionType == 'Symbol' then
+                                for symbolType,_ in pairs(conditionValue) do
+                                    tempCondition = tempCondition and card.hasTag(symbolType)
+                                end
+                            end
+                        end
+                    end
+                    condition = tempCondition
+                end
+
+                if condition then
+                    tempValue = tempValue + bonus
+                end
+
+                value = tempValue
+            end
+
             if value == 'discarded' then
-                value = gstate(pcolor,'discardedCards')
+                value = #gstate(pcolor,'discardedCards')
                 astate(pcolor,'discardedCards', 0)
             end
 			Wait.frames(|| addRes(pcolor, value, profit), 1)
