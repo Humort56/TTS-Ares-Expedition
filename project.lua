@@ -268,6 +268,7 @@ function ProjectActivate(card,pcolor,alt)
 	activateProjectProduction(card, pcolor)
 
 	if data.revealCards then
+		astate(pcolor, 'autoReady', false)
 		revealCards(pcolor, data.revealCards)
 	end
 
