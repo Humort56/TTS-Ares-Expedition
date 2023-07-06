@@ -88,11 +88,23 @@ function TokenSelect(pcolor, tokenTypes, value)
         tokenTypes = {tokenTypes}
     end
 
+    local count = 0
     for _,tokenType in pairs(tokenTypes) do
         local cards = gtags({'c'..pcolor, tokenType..'Holder'})
         for _,card in pairs(cards) do
-            TokenButtonCreate(card)
+            if 0 > value then
+                if TokenCount(card) >= -value then
+                    count = count+1
+                    TokenButtonCreate(card)
+                end
+            else
+                TokenButtonCreate(card)
+            end
         end
+    end
+
+    if 0 > value and count == 0 then
+        return true
     end
 end
 

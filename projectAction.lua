@@ -21,7 +21,7 @@ function ProjectActionButtonRemove(card)
 end
 
 function ProjectActionClean(pcolor)
-    local cards = gtag('c'..pcolor)
+    local cards = gtags({'c'..pcolor,'activated'})
 
     for _,card in pairs(cards) do
         ProjectActionButtonRemove(card)
@@ -85,7 +85,6 @@ function ProjectActionActivate(card, pcolor, alt)
 end
 
 function ProjectActionCreate(pcolor)
-    log(pcolor)
     local activatedCards = gtags({'c'..pcolor, 'Blue', 'activated'})
     for _,card in pairs(activatedCards) do
         if CARDS[gnote(card)]['action'] then
@@ -201,6 +200,27 @@ function ProjectActionHandle(pcolor, action, card, cancel)
                     TokenAdd(pcolor, card, -costValue)
                     cancelAction.profit.Token = {where='self',value=costValue}
                 end
+            end
+
+            if value.type then
+                local tokenTypes = value.type
+                if type(tokenTypes) == 'string' then tokenTypes = {tokenTypes} end
+
+                local tokenValue = value.value or 1
+                local abort = TokenSelect(pcolor, value.type, -tokenValue)
+
+                if abort then
+                    local tokens = {}
+                    for _,tokenType in pairs(tokenTypes) do
+                        table.insert(tokens, tokenType..'\'s')
+                    end
+                    
+                    sendError('You do not have enought '..table.concat(tokens,'/')..' token(s) on any card for this action')
+                    return true
+                end
+
+                ProjectActionInUse(pcolor, card, true)
+                ProjectActionClean(pcolor)
             end
         end
 
