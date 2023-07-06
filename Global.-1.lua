@@ -1129,12 +1129,7 @@ function doActionPhase()
 			if hasActivePhase(pcolor, 3) then limit = 2 end
 			astate(pcolor, 'actionLimit', limit)
 
-			local activatedCards = gtags({'c'..pcolor, 'Blue', 'activated'})
-			for _,card in pairs(activatedCards) do
-				if CARDS[gnote(card)]['action'] then
-					ProjectActionButtonCreate(card)
-				end
-			end
+			ProjectActionCreate(pcolor)
 		end
 
 		if 'Production' == PHASE_NAMES[CURRENT_PHASE] then

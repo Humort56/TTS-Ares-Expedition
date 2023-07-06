@@ -74,11 +74,22 @@ function ProjectActionActivate(card, pcolor, alt)
         end
 
         if action.choice then
-            ChoiceSelect(pcolor, card, action.choice)
+            ChoiceQueueInsert(pcolor, card, action.choice)
         end
 
         if not ProjectActionGetInUse(pcolor, name) then
+            astate(pcolor, 'actionAvailable', true)
             ProjectActionRecreate(pcolor, card)
+        end
+    end
+end
+
+function ProjectActionCreate(pcolor)
+    log(pcolor)
+    local activatedCards = gtags({'c'..pcolor, 'Blue', 'activated'})
+    for _,card in pairs(activatedCards) do
+        if CARDS[gnote(card)]['action'] then
+            ProjectActionButtonCreate(card)
         end
     end
 end
@@ -335,6 +346,7 @@ function ProjectActionEnd(pcolor)
     state[lastActionName] = nil
     astate(pcolor, 'action', state)
 
+    astate(pcolor, 'actionAvailable', false)
     ProjectActionRecreate(pcolor, lastActionCard)
 end
 
@@ -342,9 +354,12 @@ function ProjectActionRecreate(pcolor, card)
     ProjectActionButtonRemove(card)
 
     if PhaseIsAction() then
-        -- if limit is not reached
-        ProjectActionButtonCreate(card)
-        -- recreate all action not used once or twice
+        if gstate(pcolor, 'actionAvailable') == true then
+            ProjectActionButtonCreate(card)
+        else
+            -- recreate all action not used once or twice
+            ProjectActionCreate(pcolor)
+        end
     elseif card.hasTag('onPlayAction') then
         ProjectActionCancelButtonCreate(card)
     else
