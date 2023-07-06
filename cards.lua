@@ -78,7 +78,7 @@ local Cards = {
     IceAsteroid = {name='Ice Asteroid', cost=21, instant={Ocean=2}},
     TundraFarming = {name='Tundra Farming', cost=12, production={MC={Static=2},Plant={Static=1}}, instant={Plant=1}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
     ImportedHydrogen = {name='Imported Hydrogen', cost=17, instant={Ocean=1}}, -- gain 3 plants, or 3 microbes, or 2 animals
-    IoMiningIndustries = {name='Io Mining Industries', cost=37, production={MC={Static=1},Titan={Static=2}}}, -- 1VP per (Jovian Badge)
+    IoMiningIndustries = {name='Io Mining Industries', cost=37, production={MC={Static=2},Titan={Static=2}}}, -- 1VP per (Jovian Badge)
     Herbivores = {
         name='Herbivores',
         cost=25,
@@ -546,7 +546,7 @@ local Cards = {
             }}
         },
         vp=1
-    }, --effect: (Science): discard a card => (Plant)2 cards, else 1 cards
+    },
     CallistoPenalMines = {name='Callisto Penal Mines', cost=20, production={Cards={Static=1}}, vp=1},
     NitrogenRichAsteroid = {name='Nitrogen-Rich Asteroid', cost=30, instant={TR=2,Temperature=1}, manually='If you have more than 3 symbols Plant, gain 4 plants, else gain 2 plants'}, -- 2 plants, 3+(Plant) 4 Plant
     FusionPower = {name='Fusion Power', cost=7, production={Cards={Static=1}}, req={Symbol={Power=2}}},
