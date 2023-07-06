@@ -106,6 +106,14 @@ function ProjectActionOnPlay(pcolor)
     end
 end
 
+function ProjectActionOnPlayClean(pcolor)
+    local cards = gtags({'c'..pcolor,'onPlayAction'})
+
+    for _,card in pairs(cards) do
+        ProjectActionButtonRemove(card)
+    end
+end
+
 function ProjectActionCancelClean(pcolor)
     local cards = gtag('c'..pcolor)
 
@@ -222,7 +230,8 @@ function ProjectActionHandle(pcolor, action, card, cancel)
                     local cardCondition = value.card
                     local discardedCards = gstate(pcolor, 'discardedCards')
                     local tempCondition = true
-                    for _,card in pairs(discardedCards) do
+                    for _,cardName in pairs(discardedCards) do
+                        local card = gcard(pcolor, cardName, true)
                         for conditionType,conditionValue in pairs(cardCondition) do
                             if conditionType == 'Symbol' then
                                 for symbolType,_ in pairs(conditionValue) do
@@ -335,6 +344,7 @@ function ProjectActionRecreate(pcolor, card)
     if PhaseIsAction() then
         -- if limit is not reached
         ProjectActionButtonCreate(card)
+        -- recreate all action not used once or twice
     elseif card.hasTag('onPlayAction') then
         ProjectActionCancelButtonCreate(card)
     else
@@ -344,6 +354,19 @@ function ProjectActionRecreate(pcolor, card)
             ChoiceQueueConsume(pcolor)
         else
             ProjectActionOnPlay(pcolor)
+            ProjectActionInState(pcolor)
+        end
+    end
+end
+
+function ProjectActionInState(pcolor)
+    local state = gstate(pcolor, 'action')
+    if 0 == state then return end
+
+    for name,action in pairs(state) do
+        if action ~= nil then
+            local card = gcard(pcolor, name)
+            ProjectActionChoiceButtonCreate(card)
         end
     end
 end

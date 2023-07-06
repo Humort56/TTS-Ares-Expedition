@@ -534,12 +534,15 @@ local Cards = {
         cost=10,
         effects={
             onPlayScience={Action={
-                cost={Discard=1},
-                profit={Cards={
-                    base=1,
-                    bonus=1,
-                    card={Symbol={Plant=1}}
-                }}
+                name='MarsUniversity',
+                action={
+                    cost={Discard=1},
+                    profit={Cards={
+                        base=1,
+                        bonus=1,
+                        card={Symbol={Plant=1}}
+                    }}
+                }
             }}
         },
         vp=1

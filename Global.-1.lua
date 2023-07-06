@@ -512,120 +512,9 @@ end
 
 function createActivateProjectButton(card)
 	card.createButton({
-       click_function="activateProject", position={0,0.6,0}, height=200, width=400,
+       click_function="ProjectActivate", position={0,0.6,0}, height=200, width=400,
        color={0,1,0,0.6}, scale={1,1,1}, tooltip="Activate"
     })
-end
-
--- select and activate project on click
-function activateProject(card,pcolor,alt)
-	if card.name == 'Deck' then sendError("You cannot activate deck",pcolor) card.clearButtons() return end
-
-	local data = CARDS[gnote(card)]
-	if not data then sendError("Could not find data for this project",pcolor) return end
-	local cardName = gname(card)
-	local cardColor = getProjColor(card)
-	local cardHex = Color[getProjColor(card)]:toHex()
-	local basicColor = Color['White']:toHex()
-
-	local cost = ProjectCost(pcolor,card)
-
-	if alt then
-		printToColor(
-			string.format(
-				'The project [%s]%s[%s] will cost you %d MC',
-				cardHex,cardName,basicColor,cost
-			),
-			pcolor
-		)
-		return
-	end
-
-	-- check if the current phase allow this card
-	-- todo / handle special cards
-	if 1 != CURRENT_PHASE then
-		if 'Green' == cardColor and 0 == gmod(pcolor, 'playGreenDuringConstruction') then
-			sendError('You cannot play this project during this phase',pcolor)
-			return
-		end
-		if 1 == gmod(pcolor, 'playGreenDuringConstruction') then amod(pcolor, 'playGreenDuringConstruction', 0) end
-	end
-
-	if 2 != CURRENT_PHASE then
-		if 'Blue' == cardColor or 'Red' == cardColor then
-			sendError('You cannot play this project during this phase',pcolor)
-			return
-		end
-	end
-
-	local projectLimit = gstate(pcolor,'projectLimit')
-	if projectLimit < 1 then
-		sendError('You cannot play more projects this phase',pcolor)
-		return
-	end
-
-	-- check if project can be played
-	if not ProjectConditions(pcolor, data.req or {}) then
-		return
-	end
-
-	local mc = getRes(pcolor,'MC')
-	if 0 == gstate(pcolor,'freeGreenNineLess') then
-		if mc < cost then
-			sendError("You don't have enough MC ("..cost..") for this project", pcolor)
-			return
-		end
-
-		addRes(pcolor, -cost, 'MC')
-		zmod(pcolor,'payCardTemp')
-	else
-		if ProjectCostOriginal(card) > 9 then
-			sendError('This project cost more than 9 MC', pcolor)
-			return
-		end
-		astate(pcolor,'freeGreenNineLess', 0)
-	end
-
-	callAction(' play the project ['..cardHex..']' .. cardName, pcolor)
-	astate(pcolor,'projectLimit', projectLimit-1)
-	if 1 == gmod(pcolor, 'conditionPufferTemp') then amod(pcolor,'conditionPufferTemp', -1) end
-
-	printToColor(string.format(
-			"Cost of your last project (%d MC): [%s] %s",
-			cost, cardHex, cardName
-	), pcolor)
-
-	activateProjectProduction(card, pcolor)
-
-	if data.revealCards then
-		revealCards(pcolor, data.revealCards)
-	end
-
-	astateList(pcolor, data.state or {})
-
-	amodList(pcolor, data.effects or {})
-
-	playCardOnBoard(pcolor, card)
-
-	if data.manually then
-		Wait.time(|| broadcastToColor(data.manually,pcolor,'Orange'), 2)
-	end
-
-	if data.tokenType then
-		card.addTag(data.tokenType..'Holder')
-	end
-
-	if data.onPlayAction then
-		card.addTag('onPlayAction')
-	end
-
-	ProjectActionCancelClean(pcolor)
-
-	Wait.time(|| updateProductions(pcolor),1)
-	if gstate(pcolor,'projectLimit') < 1 then
-		ProjectActionClean(pcolor)
-		Wait.time(|| setReady(pcolor,true),3)
-	end
 end
 
 function onPlay(pcolor, effects)
@@ -655,7 +544,17 @@ function onPlay(pcolor, effects)
 		end
 
 		if 'Action' == effectType then
-			local card = gcard(pcolor,typeData.name)
+			for _,effect in pairs(typeData) do
+				gstate(pcolor, 'lastActionCard')
+				local state = gstate(pcolor, 'action')
+				state[effect.name] = effect.action
+				astate(pcolor,'action',state)
+				astate(pcolor,'lastActionCard',effect.name)
+
+				local card = gcard(pcolor,effect.name)
+				ProjectActionChoiceButtonCreate(card)
+				astate(pcolor, 'autoReady', false)
+			end
 		end
 
 		if 'TR' == effectType then
@@ -1208,6 +1107,7 @@ function doActionPhase()
 		ProjectActionCancelClean(pcolor)
 
 		if 'Development' == PHASE_NAMES[CURRENT_PHASE] then
+			astate(pcolor, 'autoReady', true)
 			astate(pcolor, 'projectLimit', 1)
 			ProjectActionOnPlay(pcolor)
 		end
@@ -1215,8 +1115,9 @@ function doActionPhase()
 		if 'Construction' == PHASE_NAMES[CURRENT_PHASE] then
 			local limit = 1
 			if hasActivePhase(pcolor,2) then limit = 2 end
-
+			
 			astate(pcolor, 'projectLimit', limit)
+			astate(pcolor, 'autoReady', true)
 			ProjectActionOnPlay(pcolor)
 		end
 
@@ -1683,8 +1584,14 @@ function gname(card)
 	return CARDS[name] and CARDS[name].name or name
 end
 
-function gcard(pcolor,name)
-	local cards = gtags({'c'..pcolor,'Project'})
+function gcard(pcolor,name,all)
+	local tags = {'Project'}
+
+	if all == nil then
+		table.insert(tags, 'c'..pcolor)
+	end
+
+	local cards = gtags(tags)
 	for _,card in pairs(cards) do
 		if name == gnote(card) then
 			return card
