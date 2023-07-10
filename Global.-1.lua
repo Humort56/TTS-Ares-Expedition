@@ -1104,6 +1104,8 @@ end
 function doActionPhase()
 	for _,pcolor in ipairs(playersInGame()) do
 		astate(pcolor, 'projectLimit', 0)
+		astate(pcolor, 'action', {})
+		astate(pcolor, 'actionInUse', {})
 		ProjectActionClean(pcolor)
 		ProjectActionCancelClean(pcolor)
 
@@ -1124,8 +1126,6 @@ function doActionPhase()
 
 		if PhaseIsAction() then
 			astate(pcolor, 'autoReady', false)
-			astate(pcolor, 'action', {})
-			astate(pcolor, 'actionInUse', {})
 
 			local limit = 1
 			if hasActivePhase(pcolor, 3) then limit = 2 end
@@ -1786,7 +1786,8 @@ end
 function playCardOnBoard(pcolor, card)
 	local board = gftags({'c'..pcolor,'PlayerBoard'})
 
-	local cards = gtags({'c'..pcolor, getProjColor(card), 'activated'})
+	local cardColor = getProjColor(card)
+	local cards = gtags({'c'..pcolor, cardColor, 'activated'})
 	local count = 1
 	if cards ~= nil then
 		count = #cards + 1
@@ -1796,6 +1797,7 @@ function playCardOnBoard(pcolor, card)
 	card.setPosition(above(pos,0.7))
 	card.addTag('c'..pcolor)
 	card.addTag('activated')
+	card.addTag('position'..cardColor..count)
 	card.clearButtons()
 
 	Wait.frames(|| card.setLock(true),40)

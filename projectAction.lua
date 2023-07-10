@@ -28,9 +28,19 @@ function ProjectActionClean(pcolor)
     end
 end
 
+function ProjectActionRedClean(pcolor)
+    local cards = gtags({'c'..pcolor,'Red'})
+    local actions = gstate(pcolor, 'action')
+    for _,card in pairs(cards) do
+        actions[gnote(card)] = nil
+        ProjectActionButtonRemove(card)
+    end
+
+    astate(pcolor,'action',actions)
+end
+
 function ProjectActionCancelClean(pcolor)
     local cards = gtag('c'..pcolor)
-
     for _,card in pairs(cards) do
         ProjectActionCancelButtonRemove(card)
     end
@@ -134,6 +144,48 @@ end
 
 function ProjectActionHandle(pcolor, action, card, cancel)
     local cancelAction = {profit={}}
+
+    if action.remove then
+        local cardColor = getProjColor(card)
+        card.setLock(false)
+        card.removeTag('c'..pcolor,'activated')
+        card.clearButtons()
+        card.deal(1,pcolor,HAND_INDEX_DRAW)
+
+        local actions = gstate(pcolor,'action')
+        actions[gnote(card)] = nil
+        astate(pcolor,'action',actions)
+
+        ProjectActionRedClean(pcolor)
+        createActivateProjectButton(card)
+
+        local board = gftags({'c'..pcolor,'PlayerBoard'})
+        local cards = gtags({'c'..pcolor, cardColor, 'activated'})
+        local count = #cards + 1
+        local index = 0
+
+        for i=1,count do
+            if card.hasTag('position'..cardColor..i) then
+                index = i
+                card.removeTag('position'..cardColor..i)
+            end
+        end
+
+        for i=count,index+1,-1 do
+            local changeCard = gftags({'c'..pcolor,'position'..cardColor..i})
+            changeCard.setLock(false)
+            local pos = getSnapPos(board, cardColor, 14-(count-i))
+            changeCard.setPosition(above(pos,0.7))
+        end
+
+        for i=index+1,count do
+            local changeCard = gftags({'c'..pcolor,'position'..cardColor..i})
+            changeCard.removeTag('position'..cardColor..i)
+            changeCard.addTag('position'..cardColor..i-1)
+        end
+
+        azea(pcolor,board,cardColor,index,count-1)
+    end
 
     for cost,value in pairs(action.cost or {}) do
 		if contains(RESOURCES, cost) then
@@ -348,6 +400,17 @@ function ProjectActionHandle(pcolor, action, card, cancel)
 
         cancelActions[gnote(card)] = cancelAction
         astate(pcolor,'cancelAction', cancelActions)
+    end
+end
+
+function azea(pcolor, board, cardColor, current, last)
+    local changeCard = gftags({'c'..pcolor,'position'..cardColor..current})
+    local pos = getSnapPos(board, cardColor, current)
+    changeCard.setPosition(above(pos,0.7))
+    Wait.frames(|| changeCard.setLock(true), 40)
+    
+    if current ~= last then
+        Wait.time(|| azea(pcolor,board,cardColor,current+1,last), 1)
     end
 end
 

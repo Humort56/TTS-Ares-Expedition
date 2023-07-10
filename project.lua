@@ -160,6 +160,20 @@ function ProjectInstant(pcolor, card, instantData)
 					ChoiceQueueInsert(pcolor, card, {{Token=token}})
 				end
 			end
+		elseif instantType == 'RemoveCards' then
+			astate(pcolor,'autoReady', false)
+			local cards = gtags({'c'..pcolor,'Red','activated'})
+			local actions = gstate(pcolor, 'action')
+
+			for _,removeCard in pairs(cards) do
+				local name = gnote(removeCard)
+				if gnote(card) ~= name then
+					ProjectActionChoiceButtonCreate(removeCard)
+					actions[gnote(removeCard)] = {remove=1}
+				end
+			end
+			astate(pcolor,'action',actions)
+			astate(pcolor, 'lastActionCard', gnote(card))
 		elseif 'table' == type(instantValue) then
 			for type,typeData in pairs(instantValue) do
 				if 'Symbol' == type then

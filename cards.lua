@@ -88,7 +88,11 @@ local Cards = {
         req={Ocean={value=2,bound='Lower'}},
         vp={token=0.34}
     },
-    SyntheticCatastrophe = {name='Synthetic Catastrophe', cost=0}, -- return another red card to the hand
+    SyntheticCatastrophe = {
+        name='Synthetic Catastrophe',
+        cost=0,
+        instant={RemoveCards=1}
+    },
     AssortedEnterprises = {name='Assorted Enterprises', cost=2, state={projectLimit=1}, effects={playGreenDuringConstruction=1,payCardTemp=-2}},
     -- Cards
     CommercialDistrict = {name='Commercial District', cost=25, production={MC={Static=4}}, vp=2},
