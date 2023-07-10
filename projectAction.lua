@@ -335,6 +335,10 @@ function ProjectActionHandle(pcolor, action, card, cancel)
 		end
 	end
 
+    if action.manually then
+		Wait.time(|| broadcastToColor(action.manually,pcolor,'Orange'), 1)
+	end
+
     if cancel ~= true then
         local cancelActions = gstate(pcolor, 'cancelAction')
         if cancelActions == 0 then cancelActions = {} end

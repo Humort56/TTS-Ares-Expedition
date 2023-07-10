@@ -499,7 +499,14 @@ local Cards = {
         }},
         instant={Token={where='self',value=3}}
     },
-    AdvancedScreeningTechnology = {name='Advanced Screening Technology', cost=6}, --action: reveal 3 cards, keep one card with (Plant/Science)
+    AdvancedScreeningTechnology = {
+        name='Advanced Screening Technology',
+        cost=6,
+        action={
+            profit={Cards=3},
+            manually='Keep one with a Science or Plant tag.'
+        }
+    },
     DesignedMicroorganisms = {name='Designed Microorganisms', cost=15, production={Plant={Static=2}}, req={Temperature={range='Red',bound='Upper'}}},
     Insects = {name='Insects', cost=10, production={Plant={Symbol={Plant=1}}}},
     BeamFromAThoriumAsteroid = {name='Beam from a Thorium Asteroid', cost=23, production={Plant={Static=1},Heat={Static=3}}, req={Symbol={Jovian=1}}, vp=1},
