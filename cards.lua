@@ -120,7 +120,11 @@ local Cards = {
     HydroElectricEnergy = {name='Hydro-Electric Energy', cost=11, action={cost={MC=1},profit={Heat=2},profitBonus={Heat=1}}},
     Mangrove = {name='Mangrove', cost=12, instant={Forest=1}, req={Temperature={range='White',bound='Lower'}}},
     OptimalAerobraking = {name='Optimal Aerobraking', cost=10, effects={onPlayEvent={Heat=2,Plant=2}}},
-    PowerInfrastructure = {name='Power Infrastructure', cost=4}, -- action: convert X heat to X MC
+    PowerInfrastructure = {
+        name='Power Infrastructure',
+        cost=4,
+        action={manually='Do it yourself.'}
+    },
     IceCapMelting = {name='Ice Cap Melting', cost=4, instant={Ocean=1}, req={Temperature={range='White',bound='Lower'}}},
     RecycledDetritus = {name='Recycled Detritus', cost=24, effects={onPlayEvent={Cards=2}}, vp=1},
     LagrangeObservatory = {name='Lagrange Observatory', cost=7, instant={Cards=1}, vp=1},
@@ -477,7 +481,12 @@ local Cards = {
     },
     AICentral = {name='AI Central', cost=22, action={profit={Cards=2}}, req={Symbol={Science=5}}, vp=2},
     Worms = {name='Worms', cost=11, production={Plant={Symbol={Microbe=1}}}, req={Oxygen={range='Red',bound='Lower'}}},
-    Greenhouses = {name='Greenhouses', cost=11, req={Temperature={range='Yellow',bound='Lower'}}}, --action: 1-4Heat => 1-4Plant
+    Greenhouses = {
+        name='Greenhouses',
+        cost=11,
+        action={manually='Do it yourself.'},
+        req={Temperature={range='Yellow',bound='Lower'}}
+    },
     Satellites = {name='Satellites', cost=14, production={MC={Symbol={Space=1}}}},
     Ironworks = {name='Ironworks', cost=12, action={cost={Heat=4},profit={Oxygen=1}}},
     SolarTrapping = {name='Solar Trapping', cost=10, production={Heat={Static=1}}, instant={Cards=1,Heat=3}},

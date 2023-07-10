@@ -254,7 +254,19 @@ function ProjectActivate(card,pcolor,alt)
 	end
 
 	local mc = getRes(pcolor,'MC')
-	if 0 == gstate(pcolor,'freeGreenNineLess') then
+	if 1 == gstate(pcolor,'freeGreenNineLess') then
+		if ProjectCostOriginal(card) > 9 then
+			sendError('This project cost more than 9 MC', pcolor)
+			return
+		end
+		astate(pcolor,'freeGreenNineLess', 0)
+	elseif 1 == gstate(pcolor,'freeGreenTwelveLess') then
+		if ProjectCostOriginal(card) > 12 then
+			sendError('This project cost more than 12 MC', pcolor)
+			return
+		end
+		astate(pcolor,'freeGreenTwelveLess', 0)
+	else
 		if mc < cost then
 			sendError("You don't have enough MC ("..cost..") for this project", pcolor)
 			return
@@ -262,12 +274,6 @@ function ProjectActivate(card,pcolor,alt)
 
 		addRes(pcolor, -cost, 'MC')
 		zmod(pcolor,'payCardTemp')
-	else
-		if ProjectCostOriginal(card) > 9 then
-			sendError('This project cost more than 9 MC', pcolor)
-			return
-		end
-		astate(pcolor,'freeGreenNineLess', 0)
 	end
 
 	callAction(' play the project ['..cardHex..']' .. cardName, pcolor)
