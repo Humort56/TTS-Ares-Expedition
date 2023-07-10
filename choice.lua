@@ -24,6 +24,7 @@ function ChoiceSelect(pcolor, card, choices)
 
             if token.where then
                 if 'self' == token.where then
+                    astate(pcolor,'tokenAdd', token.value or 1)
                     TokenButtonCreate(card)
                 end
             end

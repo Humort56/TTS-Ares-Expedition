@@ -1103,6 +1103,7 @@ end
 
 function doActionPhase()
 	for _,pcolor in ipairs(playersInGame()) do
+		astate(pcolor, 'projectLimit', 0)
 		ProjectActionClean(pcolor)
 		ProjectActionCancelClean(pcolor)
 
@@ -1122,6 +1123,7 @@ function doActionPhase()
 		end
 
 		if PhaseIsAction() then
+			astate(pcolor, 'autoReady', false)
 			astate(pcolor, 'action', {})
 			astate(pcolor, 'actionInUse', {})
 
@@ -1798,6 +1800,9 @@ function playCardOnBoard(pcolor, card)
 
 	Wait.frames(|| card.setLock(true),40)
 	Wait.frames(|| playTag(pcolor, card), 50)
+	if 3 == CURRENT_PHASE and CARDS[gnote(card)]['action'] then
+		Wait.frames(|| ProjectActionButtonCreate(card), 50)
+	end
 end
 
 function fulfillConditions(conditions, pcolor)
@@ -1993,7 +1998,7 @@ function geffects(pcolor)
 	
 	if not state.effect then state.effect = {} end
 	
-	return state.effect or {}
+	return state.effect
 end
 
 function gmod(pcolor,effect)

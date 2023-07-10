@@ -311,6 +311,9 @@ function ProjectActionHandle(pcolor, action, card, cancel)
                 cancelAction.profit['effects'] = effects
             end
         end
+        if 'state' == profit then
+            astateList(pcolor, value)
+        end
 	end
 
 	if hasActivePhase(pcolor,3) then

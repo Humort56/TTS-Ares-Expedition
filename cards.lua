@@ -52,7 +52,24 @@ local Cards = {
     Laboratories = {name='Laboratories', cost=8, production={Cards={Symbol={Science=0.34}}}},
     CommercialImports = {name='Commercial Imports', cost=36, production={Cards={Static=1}, Heat={Static=2}, Plant={Static=2}}},
     ProcessingPlant = {name='Processing Plant', cost=19, production={Steel={Static=2}}, revealCards={Symbol='Building'}, vp=1},
-    SelfReplicatingBacteria = {name='Self-Replicating Bacteria', cost=8}, -- action: add microbe or -5 microbe for -25MC on a card
+    SelfReplicatingBacteria = {
+        name='Self-Replicating Bacteria',
+        cost=8,
+        tokenType='Microbe',
+        action={choice={
+            {Token={where='self'}},
+            {Action={
+                cost={Token={where='self', value=5}},
+                profit={
+                    effects={
+                        payCardTemp=-25,
+                        playAnything=1
+                    },
+                    state={projectLimit=1}
+                }
+            }}
+        }},
+    },
     MatterGenerator = {
         name='Matter Generator',
         cost=13,

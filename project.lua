@@ -226,18 +226,20 @@ function ProjectActivate(card,pcolor,alt)
 	-- check if the current phase allow this card
 	-- todo / handle special cards
 	if 1 != CURRENT_PHASE then
-		if 'Green' == cardColor and 0 == gmod(pcolor, 'playGreenDuringConstruction') then
+		if 'Green' == cardColor and 0 == gmod(pcolor, 'playGreenDuringConstruction') and 0 == gmod(pcolor, 'playAnything') then
 			sendError('You cannot play this project during this phase',pcolor)
 			return
 		end
-		if 1 == gmod(pcolor, 'playGreenDuringConstruction') then amod(pcolor, 'playGreenDuringConstruction', -1) end
+		if 1 == gmod(pcolor, 'playGreenDuringConstruction') then zmod(pcolor, 'playGreenDuringConstruction') end
+		if 'Green' == cardColor and 1 == gmod(pcolor, 'playAnything') then zmod(pcolor, 'playAnything') end
 	end
 
 	if 2 != CURRENT_PHASE then
-		if 'Blue' == cardColor or 'Red' == cardColor then
+		if ('Blue' == cardColor or 'Red' == cardColor) and 0 == gmod(pcolor, 'playAnything') then
 			sendError('You cannot play this project during this phase',pcolor)
 			return
 		end
+		if 1 == gmod(pcolor, 'playAnything') then zmod(pcolor, 'playAnything') end
 	end
 
 	local projectLimit = gstate(pcolor,'projectLimit')
