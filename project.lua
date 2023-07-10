@@ -167,6 +167,18 @@ function ProjectInstant(pcolor, card, instantData)
 						gainValue = getTagCount(symbol,pcolor) * symbolGain
 						if card.hasTag(symbol) then gainValue = gainValue + symbolGain end
 					end
+				elseif 'Condition' == type then
+					gainValue = typeData.base
+					local bonus = typeData.bonus
+					local condition = true
+		
+					for symbol,symbolValue in pairs(typeData.Symbol or {}) do
+						condition = condition and (getTagCount(symbol, pcolor) >= symbolValue)
+					end
+	
+					if condition then
+						gainValue = gainValue + bonus
+					end
 				end
 			end
 		elseif 'number' == type(instantValue) then

@@ -548,7 +548,19 @@ local Cards = {
         vp=1
     },
     CallistoPenalMines = {name='Callisto Penal Mines', cost=20, production={Cards={Static=1}}, vp=1},
-    NitrogenRichAsteroid = {name='Nitrogen-Rich Asteroid', cost=30, instant={TR=2,Temperature=1}, manually='If you have more than 3 symbols Plant, gain 4 plants, else gain 2 plants'}, -- 2 plants, 3+(Plant) 4 Plant
+    NitrogenRichAsteroid = {
+        name='Nitrogen-Rich Asteroid',
+        cost=30,
+        instant={
+            TR=2,
+            Temperature=1,
+            Plant={Condition={
+                base=2,
+                bonus=2,
+                Symbol={Plant=3}
+            }}
+        }
+    },
     FusionPower = {name='Fusion Power', cost=7, production={Cards={Static=1}}, req={Symbol={Power=2}}},
     Comet = {name='Comet', cost=25, instant={Temperature=1,Ocean=1}},
     CommunityGardens = {name='Community Gardens', cost=20, action={profit={MC=2},profitBonus={Plant=1}}},
