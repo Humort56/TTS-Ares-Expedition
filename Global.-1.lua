@@ -493,9 +493,11 @@ function activateCorp(card,pcolor,alt)
 	local board = gftags({'c'..pcolor,'PlayerBoard'})
 	local pos = getSnapPos(board,'Corporation')
 	card.setPosition(pos)
+	card.addTag('c'..pcolor)
 	card.addTag('activated')
 	card.setLock(true)
 	card.clearButtons()
+	Wait.frames(|| ProjectInstant(pcolor, card, data.instant or {}))
 	Wait.frames(|| discardRemainingCorps(pcolor),10)
 end
 
@@ -1590,7 +1592,7 @@ function gname(card)
 end
 
 function gcard(pcolor,name,all)
-	local tags = {'Project'}
+	local tags = {}
 
 	if all == nil then
 		table.insert(tags, 'c'..pcolor)

@@ -5,7 +5,7 @@
 local Cards = {
     --  Coporations: Beginner
     InterplanetaryCinematics = {name = 'InterplanetaryCinematics', MC=46, SteelProduction=1, effects={payEvent=-2} },
-    Helion = {MC=28, HeatProduction=3, effects={heatAsMC=1} }, -- todo
+    Helion = {MC=28, HeatProduction=3, manually='You can remove X Heat to earn X MC whenever you want.'},
     Teractor = {MC=51, effects={payEarth=-3}},
     Ecoline = {MC=27, PlantProduction=1, effects={plantForest=-1}},
     -- Corporations: Standard
@@ -18,14 +18,24 @@ local Cards = {
     CrediCor = {MC=48, effects={payTwenty=-4} },
     MiningGuild = {name='Mining Guild', MC=27, SteelProduction=1, effects={onPlaySteelProduction={TR=1}}},
     -- Corporations: Promo
-    Arklight = {MC=43, Animals=2, vpAnimals=0.5, onPlayPlant={Animal=1}, onPlayAnimal={Animal=1}}, --todo
+    Arklight = {
+        MC=43,
+        tokenType='Animal',
+        instant={Token={where='self',value=2}},
+        effects={
+            onPlayAnimal={Token={where='Arklight'}},
+            onPlayPlant={Token={where='Arklight'}}
+        },
+        vp={token=0.5}
+    }, 
     DevTechs = {MC=40, effects={payGreen=-2}, drawChoice=5, manually='Choose a green card from your left hand and discard the other cards.' },
     LaunchStarIncorporated = {name='Launch Star Incorporated', MC=36, effects={payBlue=-3}, revealCards={Color='Blue'}},
     Celestior = {MC=50, action='todo',  }, --todo
     MaiNiProductions = { -- todo
         name='Mai-Ni Productions',
         MC=48,
-        onPlayGreen={Cards=1,manually='Discard a card'},
+        effects={onPlayGreen={Cards=1,manually='Discard a card'}},
+        state={projectLimit=1,freeTwelveNineLess=1},
         manually='Play a card from your hand that costs 12 MC or less without paying it.'
     },
     Zetasel = {MC=43, Cards=5, manually='Discard 4 cards', effects={onOcean={MC=2,Plant=2}}},
