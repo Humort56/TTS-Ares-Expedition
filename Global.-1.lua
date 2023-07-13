@@ -1089,6 +1089,14 @@ function startNextPhase()
 	REACH_OXY = false
 	REACH_OCEAN = false
 	if CURRENT_PHASE > 0 then CURRENT_PHASES[CURRENT_PHASE] = false end
+
+	if CURRENT_PHASE == 3 then
+		local actionCards = gtag('actionUsed')
+		for _,card in actionCards do
+			card.removeTag('actionUsed')
+		end
+	end
+
 	CURRENT_PHASE = getNextPhase()
 	doActionPhase()
 	if CURRENT_PHASE == 0 then
@@ -1127,9 +1135,9 @@ function doActionPhase()
 		if PhaseIsAction() then
 			astate(pcolor, 'autoReady', false)
 
-			local limit = 1
-			if hasActivePhase(pcolor, 3) then limit = 2 end
-			astate(pcolor, 'actionLimit', limit)
+			local actionDouble = false
+			if hasActivePhase(pcolor, 3) then actionDouble = true end
+			astate(pcolor, 'actionDouble', actionDouble)
 
 			ProjectActionCreate(pcolor)
 		end

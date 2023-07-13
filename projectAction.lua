@@ -77,7 +77,11 @@ function ProjectActionActivate(card, pcolor, alt)
         if abort then return end
 
         astate(pcolor, 'lastActionCard', name)
-        card.addTag('alreadyActivatedAction')
+        if card.hasTag('actionUsed') then
+            astate(pcolor, 'actionDouble', false)
+        else
+            card.addTag('actionUsed')
+        end
 
         if 1 == gmod(pcolor, 'gainForCustomAction') then
             addRes(pcolor, 1, 'MC')
@@ -96,9 +100,16 @@ end
 
 function ProjectActionCreate(pcolor)
     local activatedCards = gtags({'c'..pcolor, 'Blue', 'activated'})
+    local actionDouble = gstate(pcolor,'actionDouble')
     for _,card in pairs(activatedCards) do
         if CARDS[gnote(card)]['action'] then
-            ProjectActionButtonCreate(card)
+            local used = card.hasTag('actionUsed')
+            log('used '..tostring(used))
+            log('action '..tostring(actionDouble))
+
+            if used == false or (used == true and actionDouble == true) then
+                ProjectActionButtonCreate(card)
+            end
         end
     end
 end
@@ -444,12 +455,8 @@ function ProjectActionRecreate(pcolor, card)
     ProjectActionButtonRemove(card)
 
     if PhaseIsAction() then
-        if gstate(pcolor, 'actionAvailable') == true then
-            ProjectActionButtonCreate(card)
-        else
-            -- recreate all action not used once or twice
-            ProjectActionCreate(pcolor)
-        end
+        ProjectActionClean(pcolor)
+        ProjectActionCreate(pcolor)
     elseif card.hasTag('onPlayAction') then
         ProjectActionCancelButtonCreate(card)
     else
