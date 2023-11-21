@@ -1094,7 +1094,7 @@ function startNextPhase()
 
 	if CURRENT_PHASE == 3 then
 		local actionCards = gtag('actionUsed')
-		for _,card in actionCards do
+		for _,card in pairs(actionCards) do
 			card.removeTag('actionUsed')
 		end
 	end
