@@ -131,6 +131,10 @@ function onLoad(saved_data)
 				end
 			end
 
+			if 3 == CURRENT_PHASE then
+				ProjectActionCreate(pcolor)
+			end
+
 		end
 	end
 
