@@ -104,8 +104,6 @@ function ProjectActionCreate(pcolor)
     for _,card in pairs(activatedCards) do
         if CARDS[gnote(card)]['action'] then
             local used = card.hasTag('actionUsed')
-            log('used '..tostring(used))
-            log('action '..tostring(actionDouble))
 
             if used == false or (used == true and actionDouble == true) then
                 ProjectActionButtonCreate(card)
@@ -195,7 +193,7 @@ function ProjectActionHandle(pcolor, action, card, cancel)
             changeCard.addTag('position'..cardColor..i-1)
         end
 
-        azea(pcolor,board,cardColor,index,count-1)
+        MoveCard(pcolor,board,cardColor,index,count-1)
     end
 
     for cost,value in pairs(action.cost or {}) do
@@ -414,14 +412,14 @@ function ProjectActionHandle(pcolor, action, card, cancel)
     end
 end
 
-function azea(pcolor, board, cardColor, current, last)
+function MoveCard(pcolor, board, cardColor, current, last)
     local changeCard = gftags({'c'..pcolor,'position'..cardColor..current})
     local pos = getSnapPos(board, cardColor, current)
     changeCard.setPosition(above(pos,0.7))
     Wait.frames(|| changeCard.setLock(true), 40)
     
     if current ~= last then
-        Wait.time(|| azea(pcolor,board,cardColor,current+1,last), 1)
+        Wait.time(|| MoveCard(pcolor,board,cardColor,current+1,last), 1)
     end
 end
 
