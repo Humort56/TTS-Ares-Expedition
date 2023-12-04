@@ -1118,6 +1118,7 @@ end
 function doActionPhase()
 	for _,pcolor in ipairs(playersInGame()) do
 		astate(pcolor, 'projectLimit', 0)
+		astate(pcolor, 'freeGreenNineLess', 0)
 		astate(pcolor, 'action', {})
 		astate(pcolor, 'actionInUse', {})
 		ProjectActionClean(pcolor)
