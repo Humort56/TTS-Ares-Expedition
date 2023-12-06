@@ -417,7 +417,22 @@ local Cards = {
     }, --instant: 2microbe, action: remove 1 animal or microbe for 3 plant
     IndustrialMicrobes = {name='Industrial Microbes', cost=9, production={Heat={Static=1},Steel={Static=1}}},
     Monocultures = {name='Monocultures', cost=6, production={Plant={Static=2}}, instant={TR=-1}, req={TR=1}},
-    LargeConvoy = {name='Large Convoy', cost=36, instant={Ocean=1,Cards=2}, manually='Gain 5 plants or 3 animals', vp=2},
+    LargeConvoy = {
+        name='Large Convoy',
+        cost=36,
+        instant={
+            Ocean=1,
+            Cards=2,
+            choice={
+                name='LargeConvoy',
+                choices={
+                    {Token={type={'Animal'},value=3}},
+                    {Action={where='self',profit={Plant=5}}}
+                }
+            }
+        },
+        vp=2
+    },
     Interns = {name='Interns', cost=3, effects={researchDraw=2}},
     VestaShipyard = {name='Vesta Shipyard', cost=16, production={Titan={Static=1}}, vp=1},
     Tardigrades = {

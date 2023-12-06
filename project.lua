@@ -142,7 +142,10 @@ function ProjectInstant(pcolor, card, instantData)
 	for instantType,instantValue in pairs(instantData) do
 		local gainValue = 0
 
-		if instantType == 'Token' then
+		if instantType == 'choice' then
+			local card = gcard(pcolor, instantValue.name)
+			ChoiceQueueInsert(pcolor, card, instantValue.choices)
+		elseif instantType == 'Token' then
 			local tokens = instantValue
 
 			if tokens.where or tokens.type then
