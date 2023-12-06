@@ -287,7 +287,7 @@ function ProjectActivate(card,pcolor,alt)
 		end
 
 		addRes(pcolor, -cost, 'MC')
-		zmod(pcolor,'payCardTemp')
+		zmod(pcolor, 'payCardTemp')
 	end
 
 	callAction(' play the project ['..cardHex..']' .. cardName, pcolor)

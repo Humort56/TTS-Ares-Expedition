@@ -1121,6 +1121,8 @@ function doActionPhase()
 		astate(pcolor, 'freeGreenNineLess', 0)
 		astate(pcolor, 'action', {})
 		astate(pcolor, 'actionInUse', {})
+		zmod(pcolor, 'payCardTemp')
+
 		ProjectActionClean(pcolor)
 		ProjectActionCancelClean(pcolor)
 
@@ -2000,7 +2002,6 @@ function playTag(pcolor,card)
 
 	amodList(pcolor, data.afterEffects or {})
 
-	zmod(pcolor, 'payCardTemp')
 	-- reactivate onPlayAction cards if projectLimit not reached
 	if gstate(pcolor,'projectLimit') > 0 and not ProjectActionGetInUse(pcolor, 'inUse') then
 		ProjectActionOnPlay(pcolor)
