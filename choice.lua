@@ -19,7 +19,12 @@ function ChoiceSelect(pcolor, card, choices)
         if choice.Token then
             local token = choice.Token
             if token.type then
-                TokenSelect(pcolor, token.type, token.value or 1)
+                local holders = gtags({'c'..pcolor, token.type..'Holder'})
+                if (token.value or 1) > 0 and #holders == 0 then
+                    broadcastToColor("You have nowhere to place the " .. token.type .. " token", pcolor, COL_ERR)
+                else
+                    TokenSelect(pcolor, token.type, token.value or 1)
+                end
             end
 
             if token.where then
@@ -54,7 +59,11 @@ end
 
 function ChoiceQueueGet(pcolor)
     local queue = gstate(pcolor, 'choiceQueue')
-    if queue == 0 then queue = {} end
+
+    if type(queue) ~= 'table' then 
+        return {}
+    end
+
     return queue
 end
 

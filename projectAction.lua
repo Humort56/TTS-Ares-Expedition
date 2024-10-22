@@ -359,9 +359,25 @@ function ProjectActionHandle(pcolor, action, card, cancel)
                 end
 				TokenAdd(pcolor, tokenCard, value.value or 1, true)
 			else
-				TokenSelect(pcolor, value)
-                ProjectActionButtonRemove(card)
-                ProjectActionInUse(pcolor, card, true)
+                if type(value) ~= 'table' then
+                    value = {value}
+                end
+
+                local countHolders = 0
+
+                for _, tokenType in pairs(value) do
+                    local holders = gtags({'c'..pcolor, tokenType..'Holder'})
+                    countHolders = countHolders + #holders
+                end
+
+                if countHolders == 0 then
+                    broadcastToColor("You have nowhere to place the " .. table.concat(value, "/") .. " token", pcolor, COL_ERR)
+                    return true
+                else
+                    TokenSelect(pcolor, value)
+                    ProjectActionButtonRemove(card)
+                    ProjectActionInUse(pcolor, card, true)
+                end
 			end
 		end
         if 'effects' == profit then

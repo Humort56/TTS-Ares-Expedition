@@ -103,8 +103,8 @@ function TokenSelect(pcolor, tokenTypes, value)
         end
     end
 
-    if 0 > tokenValue and count == 0 then
-        return true
+    if 0 > tokenValue then
+        return count == 0
     end
 end
 
