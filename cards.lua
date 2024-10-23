@@ -5,13 +5,13 @@
 local Cards = {
     --  Coporations: Beginner
     InterplanetaryCinematics = {name = 'InterplanetaryCinematics', MC=46, SteelProduction=1, effects={payEvent=-2} },
-    Helion = {MC=28, HeatProduction=3, manually='You can remove X Heat to earn X MC whenever you want.'},
+    Helion = {MC=28, HeatProduction=3, manually='You can remove X Heat to earn X MC whenever you want.'}, -- THE LAST OF THE LAST
     Teractor = {MC=51, effects={payEarth=-3}},
     Ecoline = {MC=27, PlantProduction=1, effects={plantForest=-1}},
     -- Corporations: Standard
     Inventrix = {MC=33,Cards=3,effects={conditionPuffer=1}},
     UnitedNationsMarsInitiative = {name='United Nations Mars Initiative',MC=35,effects={}},	-- 6 MC → TR on first time/phase
-    SaturnSystems = {name='Saturn Systems',MC=24, TitanProduction=1,effects={onPlayJovian={TR=1}}},
+    SaturnSystems = {name='Saturn Systems',MC=24, TitanProduction=1, effects={onPlayJovian={TR=1}}}, -- Test Onplay jovian exclude themselves
     ThorGate = {MC=45, HeatProduction=1, effects={payPower=-3}},
     PhoboLog = {MC=20, TitanProduction=1, effects={titanValue=1} },
     TharsisRepublic = {name='Tharsis Republic', MC=40, effects={researchDraw=1,researchKeep=1}},
@@ -26,7 +26,7 @@ local Cards = {
             onPlayAnimal={Token={where='Arklight'}},
             onPlayPlant={Token={where='Arklight'}}
         },
-        vp={token=0.5}
+        vp={token=2}
     }, 
     DevTechs = {MC=40, effects={payGreen=-2}, drawChoice=5, manually='Choose a green card from your left hand and discard the other cards.' },
     LaunchStarIncorporated = {name='Launch Star Incorporated', MC=36, effects={payBlue=-3}, revealCards={Color='Blue'}},
@@ -37,7 +37,7 @@ local Cards = {
         effects={onPlayGreen={Cards=1,manually='Discard a card'}},
         state={projectLimit=1,freeTwelveNineLess=1},
         manually='Play a card from your hand that costs 12 MC or less without paying it.'
-    },
+    }, -- implement the free to play card at the start
     Zetasel = {MC=43, Cards=5, manually='Discard 4 cards', effects={onOcean={MC=2,Plant=2}}},
     -- Cards: Beginner Projects
     AcquiredCompany = {name='Acquired Company', cost=11, production={Cards={Static=1}}},
@@ -96,7 +96,7 @@ local Cards = {
         tokenType='Animal',
         effects={onMicrobeToken={Token={where='FilterFeeders'}}},
         req={Ocean={value=2,bound='Lower'}},
-        vp={token=0.34}
+        vp={token=3}
     },
     SyntheticCatastrophe = {
         name='Synthetic Catastrophe',
@@ -107,9 +107,21 @@ local Cards = {
     -- Cards
     CommercialDistrict = {name='Commercial District', cost=25, production={MC={Static=4}}, vp=2},
     IceAsteroid = {name='Ice Asteroid', cost=21, instant={Ocean=2}},
-    TundraFarming = {name='Tundra Farming', cost=12, production={MC={Static=2},Plant={Static=1}}, instant={Plant=1}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
+    TundraFarming = {
+        name='Tundra Farming',
+        cost=12,
+        production={MC={Static=2},Plant={Static=1}},
+        instant={Plant=1},
+        req={Temperature={range='Yellow',bound='Lower'}},
+        vp=1
+    },
     ImportedHydrogen = {name='Imported Hydrogen', cost=17, instant={Ocean=1}}, -- gain 3 plants, or 3 microbes, or 2 animals
-    IoMiningIndustries = {name='Io Mining Industries', cost=37, production={MC={Static=2},Titan={Static=2}}}, -- 1VP per (Jovian Badge)
+    IoMiningIndustries = {
+        name='Io Mining Industries',
+        cost=37,
+        production={MC={Static=2},Titan={Static=2}},
+        vp={Symbol={Jovian=1}}
+    },
     Herbivores = {
         name='Herbivores',
         cost=25,
@@ -120,9 +132,16 @@ local Cards = {
             onOxygen={Token={where='Herbivores'}}
         },
         req={Ocean={value=5,bound='Lower'}},
-        vp={token=0.5}
+        vp={token=2}
     },
-    PhysicsComplex = {name='PhysicsComplex', cost=5, tokenType='Science', effects={onTemperature={Token={where='PhysicsComplex'}}}, req={Symbol={Science=4}}, vp={token=0.5}},
+    PhysicsComplex = {
+        name='PhysicsComplex',
+        cost=5,
+        tokenType='Science',
+        effects={onTemperature={Token={where='PhysicsComplex'}}},
+        req={Symbol={Science=4}},
+        vp={token=2}
+    },
     NoctisFarming = {name='Noctis Farming', cost=13, production={Plant={Static=1}}, instant={Plant=2}, req={Temperature={range='Red',bound='Lower'}}, vp=1},
     DiversifiedInterests = {name='Diversified Interests', cost=15, production={Plant={Static=1}}, instant={Plant=3,Heat=3}},
     Smelting = {name='Smelting', cost=28, production={Heat={Static=5}}, instant={Cards=2}},
@@ -187,7 +206,7 @@ local Cards = {
     ExtendedResources = {name='Extended Resources', cost=10, effects={researchKeep=1}},
     BreathingFilters = {name='Breathing Filters', cost=9, req={Oxygen={range='Yellow',bound='Lower'}}, vp=2},
     AsteroidMining = {name='Asteroid Mining', cost=28, production={Titan={Static=2}}, vp=2},
-    ImmigrationShuttles = {name='Immigration Shuttles', cost=20, production={MC={Static=3}}}, -- 1vp per 2 (Earth Badge)
+    ImmigrationShuttles = {name='Immigration Shuttles', cost=20, production={MC={Static=3}}, vp={Symbol={Earth=2}}},
     MassConverter = {name='Mass Converter', cost=20, production={Heat={Static=3},Titan={Static=1}}, req={Symbol={Science=4}}, vp=2},
     BalancedPortfolios = {name='Balanced Portfolios', cost=8, production={MC={Static=3}}, instant={TR=-1}, req={TR=1}, vp=1},
     FarmingCoops = {
@@ -199,7 +218,12 @@ local Cards = {
             profit={Plant=3}
         }
     },
-    InterplanetaryRelations = {name='Interplanetary Relations', cost=35, effects={researchDraw=1,researchKeep=1}}, -- 1vp per 4cards
+    InterplanetaryRelations = {
+        name='Interplanetary Relations',
+        cost=35,
+        effects={researchDraw=1,researchKeep=1},
+        vp={Cards={Project=4}} 
+    },
     BusinessContacts = {name='Business Contacts', cost=5, instant={Cards=4}, manually='Discard 2 cards'},
     GeothermalPower = {name='Geothermal Power', cost=8, production={Heat={Static=2}}},
     ArtificialJungle = {name='Artificial Jungle', cost=5, action={cost={Plant=1},profit={Cards=1}}},
@@ -226,7 +250,8 @@ local Cards = {
         production={MC={Static=2}},
         instant={Plant=3,Token={type='Animal',value=2}},
         req={Temperature={range='Red',bound='Lower'}},
-        vp=1},
+        vp=1
+    },
     CircuitBoardFactory = {name='Circuit Board Factory', cost=14, action={profit={Cards=1}}},
     SmallAnimals = {
         name='Small Animals',
@@ -236,7 +261,7 @@ local Cards = {
             onForest={Token={where='SmallAnimals'}}
         },
         req={Temperature={range='Red',bound='Lower'}},
-        vp={token=0.5}
+        vp={token=2}
     },
     Trees = {name='Trees', cost=17, production={Plant={Static=3}}, instant={Plant=1}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
     AirborneRadiation = {name='Airborne Radiation', cost=15, production={Heat={Static=2}}, instant={Oxygen=1}, req={Oxygen={range='Red',bound='Lower'}}},
@@ -271,7 +296,7 @@ local Cards = {
             onPlayAnimal={Token={where='EcologicalZone'}},
             onPlayPlant={Token={where='EcologicalZone'}}
         },
-        vp={token=0.5}
+        vp={token=2}
     },
     AdaptedLichen = {name='Adapted Lichen', cost=6, production={Plant={Static=1}}},
     Crater = {name='Crater', cost=7, instant={Ocean=1}, req={Symbol={Event=3}}},
@@ -298,7 +323,13 @@ local Cards = {
                 {type='Animal',value=2}
             }
         }},
-    WaterImportFromEuropa = {name='Water Import from Europa', cost=22,  action={cost={MC={base=12,reductionRes='Titan',reductionVal=1}}, profit={Ocean=1}}}, -- 1vp per (Jovian)
+    WaterImportFromEuropa = {
+        name='Water Import from Europa',
+        cost=22,
+        action={cost={MC={base=12,reductionRes='Titan',reductionVal=1}},
+        profit={Ocean=1}},
+        vp={Symbol={Jovian=1}}
+    },
     AssemblyLines = {name='Assembly Lines', cost=13, effects={gainForCustomAction=1}},
     SubterraneanReservoir = {name='Subterranean Reservoir', cost=10, instant={Ocean=1}},
     ImportedGHG = {name='Imported GHG', cost=8, production={Heat={Static=1}}, instant={Heat=5}},
@@ -376,10 +407,10 @@ local Cards = {
         name='Think Tank',
         cost=13,
         action={cost={MC=2},profit={Cards=1}},
-        vp={Cards={Blue=0.34}}
+        vp={Cards={Blue=3}}
     },
     InvestmentLoan = {name='Investment Loan', cost=1, instant={MC=10,TR=-1}, req={TR=1}, vp=1},
-    ConservedBiome = {name='Conserved Biome', cost=25, action={profit={Token={'Animal','Microbe'}}}, vp={forest=0.5}},
+    ConservedBiome = {name='Conserved Biome', cost=25, action={profit={Token={'Animal','Microbe'}}}, vp={Forest=2}},
     RegolithEaters = {
         name='Regolith Eaters',
         cost=10,
@@ -403,7 +434,12 @@ local Cards = {
     OlympusConference = {name='Olympus Conference', cost=15, effects={onPlayScience={Cards=1}}, vp=1},
     InventionContest = {name='Invention Contest', cost=1, instant={Cards=3}, manually='Keep one card from your left hand'},
     AntiGravityTechnology = {name='Anti-Gravity Technology', cost=18, effects={onPlayCard={Heat=2,Plant=2}}, req={Symbol={Science=5}}, vp=3},
-    DevelopedInfrastructure = {name='Developed Infrastructure', cost=12, action={cost={MC={base=10,reductionCondition={Blue=5},reductionVal=5}},profit={Temperature=1}}, vp=1},
+    DevelopedInfrastructure = {
+        name='Developed Infrastructure',
+        cost=12,
+        action={cost={MC={base=10,reductionCondition={Blue=5},reductionVal=5}},profit={Temperature=1}},
+        vp=1
+    },
     MedicalLab = {name='Medical Lab', cost=15, production={MC={Symbol={Building=0.5}}}, vp=1},
     DecomposingFungus = {
         name='Decomposing Fungus',
@@ -440,7 +476,7 @@ local Cards = {
         cost=6,
         tokenType='Microbe',
         action={profit={Token={where='self'}}},
-        vp={token=0.34}
+        vp={token=3}
     },
     NuclearPlants = {name='Nuclear Plants', cost=10, production={MC={Static=1},Heat={Static=3}}, vp=-1},
     PowerGrid = {name='Power Grid', cost=8, production={MC={Symbol={Power=1}}}},

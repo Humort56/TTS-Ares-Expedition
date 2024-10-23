@@ -11,3 +11,10 @@ function CardColorHex(card)
     return Color[CardColor(card)]:toHex()
 end
 
+function CardsPlayedBy(pcolor)
+	return gtags({'c'..pcolor, 'activated'})
+end
+
+function CardsPlayedByFiltered(pcolor, filter)
+	return gtags({'c'..pcolor, 'activated', filter})
+end

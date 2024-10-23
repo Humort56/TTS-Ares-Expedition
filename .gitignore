@@ -6,5 +6,6 @@
 !choice.lua
 !project.lua
 !projectAction.lua
+!scoring.lua
 !token.lua
 !utilityTags.lua

@@ -9,6 +9,7 @@ require("project")
 require("projectAction")
 require("token")
 require("utilityTags")
+require("scoring")
 
 ----------------------------------------------------------------------------------------------------------------------------
 -- 					CH CONSTANTS
@@ -1533,10 +1534,10 @@ function ui_nextRound(player,click,id)
 	newRound()
 end
 
-function ui_production(player,click,id)
-	if not GAME_STARTED then sendError("Game has not started yet",player.color) return end
-	if CURRENT_PHASE != 4 and click == '-1' then sendError("You may only produce during the production phase (right click to ignore)",player.color) return end
-	produce(player.color)
+function ui_score(player, click, id)
+	local pcolor = player.color
+	if not GAME_STARTED then sendError("Game has not started yet", pcolor) return end
+	Score(pcolor, click == '-1')
 end
 
 function ui_ready(player,click,id)
