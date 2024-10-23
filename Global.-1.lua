@@ -484,6 +484,10 @@ function activateCorp(card,pcolor,alt)
 		end
 	end
 
+	if data.tokenType then
+		card.addTag(data.tokenType..'Holder')
+	end
+
 	amodList(pcolor, data.effects or {})
 
 	if data.revealCards then
