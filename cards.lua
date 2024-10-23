@@ -579,7 +579,7 @@ local Cards = {
         req={Oxygen={range='White',bound='Lower'}},
         vp={token=1}
     },
-    ArtificialLake = {name='Artificial Lake', cost=13, instant={Ocean=1}, req={Oxygen={range='Yellow',bound='Lower'}}, vp=1},
+    ArtificialLake = {name='Artificial Lake', cost=13, instant={Ocean=1}, req={Temperature={range='Yellow',bound='Lower'}}, vp=1},
     NitriteReducingBacteria = {
         name='Nitrite Reducing Bacteria',
         cost=11,
