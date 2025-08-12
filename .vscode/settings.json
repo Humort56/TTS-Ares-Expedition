@@ -11,9 +11,13 @@
         "Wait",
         "getObjectsWithTag",
         "getObjectsWithAllTags",
-        "JSON"
+        "JSON",
+        "log",
+        "Global",
+        "setNotes"
     ],
     "Lua.diagnostics.disable": [
         "lowercase-global"
-    ]
+    ],
+    "Lua.runtime.nonstandardSymbol": ["|lambda|"]
 }

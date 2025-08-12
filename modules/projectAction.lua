@@ -1,35 +1,26 @@
-
-local resources = require("resources")
-local Wait = _G.Wait or require("Wait")
--- Helper for button creation
-local function _createButton(card, click_func, color, tooltip)
+function ProjectActionButtonCreate(card)
     card.createButton({
-        click_function=click_func, position={-0.62,0.6,1.02}, height=300, width=350,
-        color=color, scale={1,1,1}, tooltip=tooltip
+        click_function="ProjectActionActivate", position={-0.62,0.6,1.02}, height=300, width=350,
+        color={1,0,0,0.7}, scale={1,1,1}, tooltip="Activate"
     })
 end
 
-function CreateProjectActionButton(card)
-    _createButton(card, "ProjectActionActivate", {1,0,0,0.7}, "Activate")
+function ProjectActionChoiceButtonCreate(card)
+    card.createButton({
+        click_function="ProjectActionActivate", position={-0.62,0.6,1.02}, height=300, width=350,
+        color={1,0,1,0.9}, scale={1,1,1}, tooltip="Activate"
+    })
 end
 
-function CreateProjectActionChoiceButton(card)
-    _createButton(card, "ProjectActionActivate", {1,0,1,0.9}, "Activate")
-end
-
-local function _removeButton(card, click_func)
+function ProjectActionButtonRemove(card)
     for _,btn in pairs(card.getButtons() or {}) do
-        if click_func == btn.click_function then
+        if 'ProjectActionActivate' == btn.click_function then
             card.removeButton(btn.index)
         end
     end
 end
 
-function RemoveProjectActionButton(card)
-    _removeButton(card, 'ProjectActionActivate')
-end
-
-function CleanProjectActionButtons(pcolor)
+function ProjectActionClean(pcolor)
     local cards = gtags({'c'..pcolor,'activated'})
 
     for _,card in pairs(cards) do
@@ -37,7 +28,7 @@ function CleanProjectActionButtons(pcolor)
     end
 end
 
-function CleanRedProjectActionButtons(pcolor)
+function ProjectActionRedClean(pcolor)
     local cards = gtags({'c'..pcolor,'Red'})
     local actions = gstate(pcolor, 'action')
     for _,card in pairs(cards) do
@@ -48,23 +39,29 @@ function CleanRedProjectActionButtons(pcolor)
     astate(pcolor,'action',actions)
 end
 
-function CleanProjectActionCancelButtons(pcolor)
+function ProjectActionCancelClean(pcolor)
     local cards = gtag('c'..pcolor)
     for _,card in pairs(cards) do
         ProjectActionCancelButtonRemove(card)
     end
 end
 
-
-function CreateProjectActionCancelButton(card)
-    _createButton(card, "ProjectActionCancel", {1,0,0,0.9}, "Cancel")
+function ProjectActionCancelButtonCreate(card)
+    card.createButton({
+        click_function="ProjectActionCancel", position={-0.62,0.6,1.02}, height=300, width=350,
+        color={1,0,0,0.9}, scale={1,1,1}, tooltip="Cancel"
+    })
 end
 
-function RemoveProjectActionCancelButton(card)
-    _removeButton(card, 'ProjectActionCancel')
+function ProjectActionCancelButtonRemove(card)
+    for _,btn in pairs(card.getButtons() or {}) do
+        if 'ProjectActionCancel' == btn.click_function then
+            card.removeButton(btn.index)
+        end
+    end
 end
 
-function ActivateProjectAction(card, pcolor, alt)
+function ProjectActionActivate(card, pcolor, alt)
 	local name = gnote(card)
     local state = gstate(pcolor, 'action')
 
@@ -87,7 +84,7 @@ function ActivateProjectAction(card, pcolor, alt)
         end
 
         if 1 == gmod(pcolor, 'gainForCustomAction') then
-            resources.addRes(pcolor, 1, 'MC')
+            addRes(pcolor, 1, 'MC')
         end
 
         if action.choice then
@@ -101,7 +98,7 @@ function ActivateProjectAction(card, pcolor, alt)
     end
 end
 
-function CreateProjectActionsForPlayer(pcolor)
+function ProjectActionCreate(pcolor)
     local activatedCards = gtags({'c'..pcolor, 'Blue', 'activated'})
     local actionDouble = gstate(pcolor,'actionDouble')
     for _,card in pairs(activatedCards) do
@@ -115,7 +112,7 @@ function CreateProjectActionsForPlayer(pcolor)
     end
 end
 
-function CancelProjectAction(card, pcolor, alt)
+function ProjectActionCancel(card, pcolor, alt)
     local cancelActions = gstate(pcolor, 'cancelAction')
     local name = gnote(card)
 
@@ -130,7 +127,7 @@ function CancelProjectAction(card, pcolor, alt)
     ProjectActionChoiceButtonCreate(card)
 end
 
-function OnPlayProjectAction(pcolor)
+function ProjectActionOnPlay(pcolor)
     local cards = gtags({'c'..pcolor,'onPlayAction'})
 
     for _,card in pairs(cards) do
@@ -138,7 +135,7 @@ function OnPlayProjectAction(pcolor)
     end
 end
 
-function CleanOnPlayProjectActionButtons(pcolor)
+function ProjectActionOnPlayClean(pcolor)
     local cards = gtags({'c'..pcolor,'onPlayAction'})
 
     for _,card in pairs(cards) do
@@ -154,7 +151,7 @@ function ProjectActionCancelClean(pcolor)
     end
 end
 
-function HandleProjectAction(pcolor, action, card, cancel)
+function ProjectActionHandle(pcolor, action, card, cancel)
     local cancelAction = {profit={}}
 
     if action.remove then
@@ -185,15 +182,23 @@ function HandleProjectAction(pcolor, action, card, cancel)
 
         for i=count,index+1,-1 do
             local changeCard = gftags({'c'..pcolor,'position'..cardColor..i})
-            changeCard.setLock(false)
-            local pos = getSnapPos(board, cardColor, 14-(count-i))
-            changeCard.setPosition(above(pos,0.7))
+            if changeCard then
+                changeCard.setLock(false)
+                local pos = getSnapPos(board, cardColor, 14-(count-i))
+                changeCard.setPosition(above(pos,0.7))
+            else
+                sendError('Could not find card for position ' .. i .. ' of color ' .. cardColor)
+            end
         end
 
         for i=index+1,count do
             local changeCard = gftags({'c'..pcolor,'position'..cardColor..i})
-            changeCard.removeTag('position'..cardColor..i)
-            changeCard.addTag('position'..cardColor..i-1)
+            if changeCard then
+                changeCard.removeTag('position'..cardColor..i)
+                changeCard.addTag('position'..cardColor..i-1)
+            else
+                sendError('Could not find card for position ' .. i .. ' of color ' .. cardColor)
+            end
         end
 
         MoveCard(pcolor,board,cardColor,index,count-1)
@@ -240,12 +245,12 @@ function HandleProjectAction(pcolor, action, card, cancel)
 			
 			if trueValue > res then
 				-- send error when not enought resources
-				messaging.sendError('You do not have enought '..cost)
+				sendError('You do not have enought '..cost)
 				return true
 			end
 
 			printToColor('You paid '..trueValue..' '..cost..' to use this action', pcolor)
-			resources.addRes(pcolor, -trueValue, cost)
+			addRes(pcolor, -trueValue, cost)
             cancelAction.profit[cost] = trueValue
 		end
 
@@ -257,7 +262,7 @@ function HandleProjectAction(pcolor, action, card, cancel)
 
                     if costValue > tokenCount then
                         -- send error when not enought resources
-                        messaging.sendError('You do not have enought '..CARDS[gnote(card)].tokenType..'(s)')
+                        sendError('You do not have enought '..CARDS[gnote(card)].tokenType..'(s)')
                         return true
                     end
 
@@ -279,7 +284,7 @@ function HandleProjectAction(pcolor, action, card, cancel)
                         table.insert(tokens, tokenType..'\'s')
                     end
                     
-                    messaging.sendError('You do not have enought '..table.concat(tokens,'/')..' token(s) on any card for this action')
+                    sendError('You do not have enought '..table.concat(tokens,'/')..' token(s) on any card for this action')
                     return true
                 end
 
@@ -294,10 +299,10 @@ function HandleProjectAction(pcolor, action, card, cancel)
             local discardedCards = {}
 
             if #cards == 0 then
-                messaging.sendError('You do not have any card(s) ready to discard')
+                sendError('You do not have any card(s) ready to discard')
                 return true
             elseif #cards > value then
-                messaging.sendError('You have too many cards ready to discard')
+                sendError('You have too many cards ready to discard')
                 return true
             end
 
@@ -324,6 +329,10 @@ function HandleProjectAction(pcolor, action, card, cancel)
                 if value.card and 0 ~= gstate(pcolor, 'discardedCards') then
                     local cardCondition = value.card
                     local discardedCards = gstate(pcolor, 'discardedCards')
+                    if 'table' ~= type(discardedCards) then
+                        sendError('Discarded cards must be a table')
+                        discardedCards = {}
+                    end
                     local tempCondition = true
                     for _,cardName in pairs(discardedCards) do
                         local card = gcard(pcolor, cardName, true)
@@ -349,8 +358,9 @@ function HandleProjectAction(pcolor, action, card, cancel)
                 value = #gstate(pcolor,'discardedCards')
                 astate(pcolor,'discardedCards', 0)
             end
-            Wait.frames(function() resources.addRes(pcolor, value, profit) end, 1)
+			Wait.frames(|| addRes(pcolor, value, profit), 1)
 		end
+
 		if contains(TERRAFORMING,profit) then
 			_G['inc'..profit](value, pcolor)
 		end
@@ -383,7 +393,12 @@ function HandleProjectAction(pcolor, action, card, cancel)
                 end
 			end
 		end
+
         if 'effects' == profit then
+            if 'table' ~= type(value) then
+                sendError('Effects must be a table')
+                value = {}
+            end
             for effect,effectValue in pairs(value) do
                 amod(pcolor,effect,effectValue)
                 local effects = cancelAction['profit']['effects'] or {}
@@ -419,7 +434,7 @@ function HandleProjectAction(pcolor, action, card, cancel)
 	end
 
     if action.manually then
-        Wait.time(function() broadcastToColor(action.manually,pcolor,'Orange') end, 1)
+		Wait.time(|| broadcastToColor(action.manually,pcolor,'Orange'), 1)
 	end
 
     if cancel ~= true then
@@ -431,29 +446,33 @@ function HandleProjectAction(pcolor, action, card, cancel)
     end
 end
 
-function MoveProjectCard(pcolor, board, cardColor, current, last)
+function MoveCard(pcolor, board, cardColor, current, last)
     local changeCard = gftags({'c'..pcolor,'position'..cardColor..current})
+    if not changeCard then
+        sendError('Could not find card for position ' .. current .. ' of color ' .. cardColor)
+        return
+    end
     local pos = getSnapPos(board, cardColor, current)
     changeCard.setPosition(above(pos,0.7))
-    Wait.frames(function() changeCard.setLock(true) end, 40)
+    Wait.frames(|| changeCard.setLock(true), 40)
     
     if current ~= last then
-        Wait.time(function() MoveCard(pcolor,board,cardColor,current+1,last) end, 1)
+        Wait.time(|| MoveCard(pcolor,board,cardColor,current+1,last), 1)
     end
 end
 
-function IsProjectActionInUse(pcolor, name)
+function ProjectActionGetInUse(pcolor, name)
     return gstate(pcolor, 'actionInUse')[name] or false
 end
 
-function SetProjectActionInUse(pcolor, card, status)
+function ProjectActionInUse(pcolor, card, status)
     local state = gstate(pcolor, 'actionInUse')
     state['inUse'] = status
     state[gnote(card)] = status
     astate(pcolor, 'actionInUse', state)
 end
 
-function EndProjectAction(pcolor)
+function ProjectActionEnd(pcolor)
     TokenUnselect(pcolor)
 
     local lastActionName = gstate(pcolor, 'lastActionCard')
@@ -468,7 +487,7 @@ function EndProjectAction(pcolor)
     ProjectActionRecreate(pcolor, lastActionCard)
 end
 
-function RecreateProjectAction(pcolor, card)
+function ProjectActionRecreate(pcolor, card)
     ProjectActionButtonRemove(card)
 
     if PhaseIsAction() then
@@ -488,9 +507,10 @@ function RecreateProjectAction(pcolor, card)
     end
 end
 
-function IsProjectActionInState(pcolor)
+function ProjectActionInState(pcolor)
     local state = gstate(pcolor, 'action')
-    if 0 == state then return end
+
+    if 'table' ~= type(state) then return end
 
     for name,action in pairs(state) do
         if action ~= nil then

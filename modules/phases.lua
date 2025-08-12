@@ -116,6 +116,11 @@ end
 -- move phase board of given number aside
 function removePhaseBoard(nr)
 	local board = gftags({'PhaseBoard','Ph'..nr})
+    if not board then
+        sendError("Phase Board not found",getSeletectedPhaseCard().color)
+        return
+    end
+
 	local pos = getSnapPos(Global,'PhaseBoard',6)
 	if not board.is_face_down then board.setRotation({0,180,180}) end
 	board.setPosition(above(pos,nr))
@@ -126,6 +131,11 @@ end
 function setPhaseBoard(nr)
 	local board = gftags({'PhaseBoard','Ph'..nr})
 	local pos = getSnapPos(Global,'PhaseBoard',nr)
+    if not board then
+        sendError("Phase Board not found",getSeletectedPhaseCard().color)
+        return
+    end
+
 	board.setPosition(above(pos,1))
 	if not board.hasTag('active') then
 		board.flip()

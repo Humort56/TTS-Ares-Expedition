@@ -71,6 +71,8 @@ end
 -- return current temperatur parameter
 function getTemperature()
 	local board = gftag('Mars')
+    if not board then sendError('Could not find Mars board') return 0 end
+
 	local cube = gftag('TemperatureCube')
 	if not cube then sendError('Could not find temperature tracker') return 0 end
 	for i,snap in ipairs(getSnapsWithTag(board,'TemperatureCube')) do
@@ -85,6 +87,8 @@ end
 -- return current oxygen parameter
 function getOxygen()
 	local board = gftag('Mars')
+    if not board then sendError('Could not find Mars board') return 0 end
+
 	local cube = gftag('OxygenCube')
 	if not cube then sendError('Could not find oxygen tracker') return 0 end
 	for i,snap in ipairs(getSnapsWithTag(board,'OxygenCube')) do

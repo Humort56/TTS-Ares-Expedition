@@ -68,7 +68,7 @@ function updateProduction(pcolor, res)
 	newProduction = newProduction + forestProd
 
 	local delta = newProduction - current
-	if delta != 0 then
+	if delta ~= 0 then
 		addProduction(pcolor, res, delta)
 	end
 end
@@ -84,6 +84,11 @@ end
 function getResourceCubes(pcolor,res)
 	local res = res or 'MC'
 	local board = gftags({'c'..pcolor,'ResourceBoard'})
+    if not board then
+        sendError('Could not find resource board for ' .. pcolor)
+        return {}
+    end
+
 	local pos = board.positionToWorld(RES_POSITIONS[res])
 	local size = multPosition(board.getBoundsNormalized().size,{0.4,1,0.15})
 	local hitList = Physics.cast({
@@ -103,6 +108,11 @@ function getCubeProd(cube,res,pcolor)
 	local pcolor = pcolor or getOwner(cube)
 	local res = res or 'MC'
 	local board = gftags({'c'..pcolor,'ResourceBoard'})
+    if not board then
+        sendError('Could not find resource board for ' .. pcolor)
+        return 0
+    end
+
 	for i,snap in ipairs(getSnapsWithTag(board,res)) do
 		local pos = board.positionToWorld(snap.position)
 		local d = round(distance(pos,cube.getPosition()),1)
@@ -130,7 +140,7 @@ end
 -- return list of existing production fields for given resource
 function getResProdFiels(res)
 	local fields = {20,10,9,8,7,6,5,4,3,2,1}
-	if res != 'Steel' and res != 'Titan' then
+	if res ~= 'Steel' and res ~= 'Titan' then
 		table.insert(fields,1,30)
 	end
 	return fields
@@ -155,10 +165,15 @@ function updateProductionCubes(pcolor,res,value,cubes)
 			ccount = ccount + 1
 			fcount = fcount + 1
 			local cube = cubes[ccount] or getNewPlayerCube(pcolor)
-			local index = getResSnapIndex(field)
-			local pos = above(getSnapPos(board,res,index),fcount)
-			cube.setPosition(pos)
-			value = value - field
+            if not cube then
+                sendError('Could not find player cube for ' .. pcolor)
+                return
+            else
+                local index = getResSnapIndex(field)
+                local pos = above(getSnapPos(board,res,index),fcount)
+                cube.setPosition(pos)
+                value = value - field
+            end
 		end
 	end
 	if #cubes > ccount then
@@ -169,6 +184,10 @@ end
 -- return a new created player cube
 function getNewPlayerCube(pcolor)
 	local bag = gftags({'c'..pcolor,'CubeBag'})
+    if not bag then
+        sendError('Could not find player cube bag for ' .. pcolor)
+        return nil
+    end
 	return bag.takeObject()
 end
 
@@ -193,6 +212,8 @@ end
 -- return a list of player cubes representing TR value
 function getTRCubes(pcolor)
 	local board = gftag('Mars')
+    if not board then sendError('Could not find Mars board') return {} end
+
 	local pos = addPosition(board.getPosition(),{-1,0,0})
 	local size = board.getBoundsNormalized().size
 	local hitList = Physics.cast({
@@ -211,6 +232,8 @@ end
 function getCubeTR(cube,pcolor)
 	local pcolor = pcolor or getOwner(cube)
 	local board = gftag('Mars')
+    if not board then sendError('Could not find Mars board') return 0 end
+
 	for i,snap in ipairs(getSnapsWithTag(board,'TR')) do
 		local pos = board.positionToWorld(snap.position)
 		local d = round(distance(pos,cube.getPosition()),1)
@@ -236,16 +259,26 @@ function addTR(pcolor,add)
 	local ccount = 0
 	local add = add or 1
 	local newTR = math.max(getTR(pcolor) + add,0)
+
 	while newTR >= 50 do
 		ccount = ccount + 1
 		local cube = cubes[ccount] or getNewPlayerCube(pcolor)
+        if not cube then
+            sendError('Could not find player cube for ' .. pcolor)
+            return
+        end
 		local pos = above(getSnapPos(board,'TR',51),ccount)
 		cube.setPosition(pos)
 		newTR = newTR - 50
 	end
+
 	if newTR > 0 or ccount == 0 then
 		ccount = ccount + 1
 		local cube = cubes[ccount] or getNewPlayerCube(pcolor)
+        if not cube then
+            sendError('Could not find player cube for ' .. pcolor)
+            return
+        end
 		local index = getTRSnapIndex(newTR)
 		local pos = above(getSnapPos(board,'TR',index),ccount)
 		cube.setPosition(pos)

@@ -41,6 +41,11 @@ function setStartingCorps(sBoard)
 	local corpCount = sBoard.getVar('BeginnerCorporations') and 1 or 2
 	local pos = getSnapPos(sBoard,'Corporation',index)
 	local cards = getCardsOnPos(pos)
+    if not cards then
+        sendError("Corporation deck not found!",getSeletectedPhaseCard().color)
+        return
+    end
+
 	if sBoard.getVar('PromoCorporations') then
 		cards.putObject(getCardsOnPos(getSnapPos(sBoard,'Corporation',3)))
 	end
@@ -66,6 +71,15 @@ function setStartingProjects(sBoard)
 	local bcount = 16
 	local cards = getCardsOnPos(getSnapPos(sBoard,'Project',1))
 	local bcards = getCardsOnPos(getSnapPos(sBoard,'Project',2))
+    if not cards then
+        sendError("Project deck not found!",getSeletectedPhaseCard().color)
+        return
+    end
+    if not bcards then
+        sendError("Beginner project deck not found!",getSeletectedPhaseCard().color)
+        return
+    end
+
 	if sBoard.getVar('BeginnerProjects') then
 		bcards.shuffle()
 		for _,pcolor in ipairs(playersInGame()) do
@@ -101,6 +115,10 @@ end
 function placeOceans()
 	local oceans = shuffleList(gtag('Ocean'))
 	local mboard = gftag('Mars')
+    if not mboard then
+        sendError('Could not find Mars board')
+        return
+    end
 	local rot = addPosition(mboard.getRotation(),{0,90,180})
 	for index,ocean in ipairs(oceans) do
 		local snap = findSnapOnObj(mboard,'Ocean',index)

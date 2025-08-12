@@ -652,7 +652,7 @@ function activateProjectProduction(card, pcolor)
 		local total = getProduction(pcolor,res)
 		local prod = gprod(pcolor, res)
 		for resType, resProd in pairs(resData) do
-			if 'Symbol' == resType then
+			if 'Symbol' == resType and type(resProd) == "table" then
 				local symbolList = prod[resType] or {}
 				for symbol,value in pairs(resProd) do
 					symbolList[symbol] = (symbolList[symbol] or 0) + value

@@ -9,7 +9,7 @@ function geffects(pcolor)
 	return state.effect
 end
 
-function gmod(pcolor,effect)
+function gmod(pcolor, effect)
 	local effects = geffects(pcolor)
 	return effects[effect] or 0
 end
@@ -51,6 +51,10 @@ function gproductions(pcolor)
 			or	pcolor == 'Blue' and E_BLUE
 			or	pcolor == 'Yellow' and E_YELLOW
 			or	pcolor == 'Green' and E_GREEN
+
+    if not state then
+        return {}
+    end
 	
 	if not state.production then state.production = {} end
 
@@ -73,11 +77,17 @@ function gstates(pcolor)
 			or	pcolor == 'Yellow' and E_YELLOW
 			or	pcolor == 'Green' and E_GREEN
 	
+    if not state then
+        return {}
+    end
+
 	if not state.state then state.state = {} end
 
 	return state.state
 end
 
+--- Fetch the state for a given player color and state name.
+--- @return integer|table #The result of the operation, which can be either an integer or a table.
 function gstate(pcolor,state)
 	local states = gstates(pcolor)
 	return states[state] or 0
@@ -294,7 +304,6 @@ end
 
 -- return random element from given list
 function getRandomElement(list)
-	for i=1,3 do math.random() end
 	if list == nil or #list == 0 then return nil end
 	return list[math.random(#list)]
 end

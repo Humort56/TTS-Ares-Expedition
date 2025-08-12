@@ -66,8 +66,8 @@ function activateCorp(card,pcolor,alt)
 	card.addTag('activated')
 	card.setLock(true)
 	card.clearButtons()
-	Wait.frames(|| ProjectInstant(pcolor, card, data.instant or {}))
-	Wait.frames(|| discardRemainingCorps(pcolor),10)
+	Wait.frames(function() ProjectInstant(pcolor, card, data.instant or {}) end)
+	Wait.frames(function() discardRemainingCorps(pcolor) end,10)
 end
 
 -- discard any remaining coorps in player hand

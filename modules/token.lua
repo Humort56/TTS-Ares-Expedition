@@ -8,6 +8,11 @@ function TokenAdd(pcolor, card, add, cancel)
 
     if add > 0 then
         local bag = gftags({'c'..pcolor,trueTokenType..'Bag'})
+        if not bag then
+            sendError("Could not find " .. trueTokenType .. " bag", pcolor)
+            return
+        end
+
         local tokenPos = card.positionToWorld({0.62,0.6,-1.02})
 
         for i=1,add do
@@ -131,7 +136,7 @@ function TokenCount(card)
 		end
 	end
 
-	if stackPresent then
+	if stackPresent and stack then
         tokenCount = stack.getQuantity()
         if #tokens > 1 then
             tokenCount = tokenCount + (#tokens - 1)
@@ -146,9 +151,7 @@ end
 function TokenOnPlay(pcolor, tokenType)
     local effects = gmod(pcolor, 'on' .. tokenType .. 'Token')
     
-    if 'number' == type(effects) then
-        return
-    end
+    if 'table' ~= type(effects) then return end
 
     for effectType, typeData in pairs(effects) do	
 		if 'Token' == effectType then
