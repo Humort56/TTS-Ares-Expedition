@@ -177,11 +177,19 @@ function click_checkMove(_, color)
         if checkData.move == true then
             checkData.move = false
             local buttonEntry = findButton(self, find_func)
-            self.editButton({index=buttonEntry.index, label=""})
+            if not buttonEntry then
+                error("Button not found for click_checkMove")
+            else
+                self.editButton({index=buttonEntry.index, label=""})
+            end
         else
             checkData.move = true
             local buttonEntry = findButton(self, find_func)
-            self.editButton({index=buttonEntry.index, label=string.char(10008)})
+            if not buttonEntry then
+                error("Button not found for click_checkMove")
+            else
+                self.editButton({index=buttonEntry.index, label=string.char(10008)})
+            end
         end
     end
 end

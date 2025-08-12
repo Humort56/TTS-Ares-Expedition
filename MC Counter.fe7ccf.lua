@@ -8,7 +8,7 @@ ALLOW_NEGATIVE = true
 CURRENT_COUNT = 0
 
 function onLoad(saved_data)
-    if saved_data != '' then
+    if saved_data ~= '' then
         local loaded_data = JSON.decode(saved_data)
         if loaded_data.count then
             CURRENT_COUNT = loaded_data.count
