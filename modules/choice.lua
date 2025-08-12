@@ -2,7 +2,7 @@ function ChoiceSelect(pcolor, card, choices)
     local name = gnote(card)
 
     astate(pcolor, 'lastActionCard', name)
-    ProjectActionInUse(pcolor, card, true)
+    ProjectActionSetInUse(pcolor, card, true)
     broadcastToColor('Choose the effect of [' .. Color[getProjColor(card)]:toHex() .. ']' .. CARDS[name].name, pcolor)
 
     for _,choice in pairs(choices) do
@@ -19,7 +19,20 @@ function ChoiceSelect(pcolor, card, choices)
         if choice.Token then
             local token = choice.Token
             if token.type then
-                local holders = gtags({'c'..pcolor, token.type..'Holder'})
+                local tokenType = token.type
+                local holders = {}
+
+                if 'table' ~= type(tokenType) then
+                    tokenType = {tokenType}
+                end
+
+                for _, possibleTokenType in pairs(tokenType) do
+                    local typeHolders = gtags({'c' .. pcolor, possibleTokenType .. 'Holder'})
+                    for _, holder in pairs(typeHolders) do
+                        table.insert(holders, holder)
+                    end
+                end
+
                 if (token.value or 1) > 0 and #holders == 0 then
                     broadcastToColor("You have nowhere to place the " .. token.type .. " token", pcolor, COL_ERR)
                 else
@@ -37,16 +50,20 @@ function ChoiceSelect(pcolor, card, choices)
     end
 end
 
-function ChoiceQueueInsert(pcolor, card, choices)
-    local queue = ChoiceQueueGet(pcolor)
-
-    if #queue > 0 or ProjectActionGetInUse(pcolor, 'inUse') then
+function ChoiceQueueInsert(playerColor, card, choices)
+    if ChoiceInProgress(playerColor) then
+        local queue = ChoiceQueueGet(playerColor)
         table.insert(queue, {name=gnote(card), choices=choices})
-        ChoiceQueueSet(pcolor, queue)
+        ChoiceQueueSet(playerColor, queue)
     else
-        ProjectActionClean(pcolor)
-        ChoiceSelect(pcolor, card, choices)
+        ProjectActionClean(playerColor)
+        ChoiceSelect(playerColor, card, choices)
     end
+end
+
+function ChoiceInProgress(playerColor)
+    local queue = ChoiceQueueGet(playerColor)
+    return #queue > 0 or ProjectActionGetInUse(playerColor, 'inUse')
 end
 
 function ChoiceQueueConsume(pcolor)

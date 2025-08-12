@@ -66,7 +66,7 @@ function activateCorp(card,pcolor,alt)
 	card.addTag('activated')
 	card.setLock(true)
 	card.clearButtons()
-	Wait.frames(function() ProjectInstant(pcolor, card, data.instant or {}) end)
+	Wait.frames(function() ProjectInstantEffects(pcolor, card, data.instant or {}) end)
 	Wait.frames(function() discardRemainingCorps(pcolor) end,10)
 end
 

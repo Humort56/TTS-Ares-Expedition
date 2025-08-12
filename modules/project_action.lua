@@ -39,13 +39,6 @@ function ProjectActionRedClean(pcolor)
     astate(pcolor,'action',actions)
 end
 
-function ProjectActionCancelClean(pcolor)
-    local cards = gtag('c'..pcolor)
-    for _,card in pairs(cards) do
-        ProjectActionCancelButtonRemove(card)
-    end
-end
-
 function ProjectActionCancelButtonCreate(card)
     card.createButton({
         click_function="ProjectActionCancel", position={-0.62,0.6,1.02}, height=300, width=350,
@@ -288,7 +281,7 @@ function ProjectActionHandle(pcolor, action, card, cancel)
                     return true
                 end
 
-                ProjectActionInUse(pcolor, card, true)
+                ProjectActionSetInUse(pcolor, card, true)
                 ProjectActionClean(pcolor)
             end
         end
@@ -389,7 +382,7 @@ function ProjectActionHandle(pcolor, action, card, cancel)
                 else
                     TokenSelect(pcolor, value)
                     ProjectActionButtonRemove(card)
-                    ProjectActionInUse(pcolor, card, true)
+                    ProjectActionSetInUse(pcolor, card, true)
                 end
 			end
 		end
@@ -469,7 +462,8 @@ function ProjectActionGetInUse(pcolor, name)
     return gstate(pcolor, 'actionInUse')[name] or false
 end
 
-function ProjectActionInUse(pcolor, card, status)
+function ProjectActionSetInUse(pcolor, card, status)
+    log('ProjectActionSetInUse: ' .. pcolor .. ' - ' .. gnote(card) .. ' - ' .. tostring(status))
     local state = gstate(pcolor, 'actionInUse')
     state['inUse'] = status
     state[gnote(card)] = status
@@ -482,7 +476,7 @@ function ProjectActionEnd(pcolor)
     local lastActionName = gstate(pcolor, 'lastActionCard')
     local lastActionCard = gcard(pcolor, lastActionName)
 
-    ProjectActionInUse(pcolor, lastActionCard, false)
+    ProjectActionSetInUse(pcolor, lastActionCard, false)
     local state = gstate(pcolor, 'action')
     state[lastActionName] = nil
     astate(pcolor, 'action', state)

@@ -138,7 +138,7 @@ function ProjectCondition(pcolor, element, condition)
     return true
 end
 
-function ProjectInstant(pcolor, card, instantData)
+function ProjectInstantEffects(pcolor, card, instantData)
 	for instantType,instantValue in pairs(instantData) do
 		local gainValue = 0
 
@@ -152,7 +152,7 @@ function ProjectInstant(pcolor, card, instantData)
 				tokens = {tokens}
 			end
 
-			for _,token in pairs(tokens) do
+			for _, token in pairs(tokens) do
 				if token.where then
 					if token.where == 'self' then
 						TokenAdd(pcolor, card, token.value or 1)
@@ -330,14 +330,25 @@ function ProjectActivate(card,pcolor,alt)
 	ProjectActionCancelClean(pcolor)
 
 	Wait.time(|| updateProductions(pcolor),1)
-	if gstate(pcolor,'projectLimit') < 1 then
-		if gstate(pcolor, 'autoReady') == true then
-			ProjectActionClean(pcolor)
-			Wait.time(|| setReady(pcolor,true),3)
-		else
-			ProjectActionOnPlayClean(pcolor)
-		end
-	end
+	Wait.frames(function()
+		Wait.condition(
+			function()
+				if gstate(pcolor,'projectLimit') < 1 then
+					if gstate(pcolor, 'autoReady') == true then
+						ProjectActionClean(pcolor)
+						Wait.time(|| setReady(pcolor,true),3)
+					else
+						ProjectActionOnPlayClean(pcolor)
+					end
+				end
+			end,
+			function()
+				local choiceInProgress = ChoiceInProgress(pcolor)
+				log(choiceInProgress)
+				return not choiceInProgress
+			end
+		)
+	end, 50)
 end
 
 function getProjColor(card)
@@ -554,7 +565,7 @@ function playTag(pcolor,card)
 	
 	local data = CARDS[gnote(card)]
 
-	ProjectInstant(pcolor, card, data.instant or {})
+	ProjectInstantEffects(pcolor, card, data.instant or {})
 
 	-- play the effects which do not apply to itself
 	amodList(pcolor, data.afterEffects or {})
