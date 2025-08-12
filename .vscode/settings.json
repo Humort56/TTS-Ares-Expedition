@@ -15,7 +15,9 @@
         "log",
         "Global",
         "setNotes",
-        "self"
+        "self",
+        "ipairs",
+        "type"
     ],
     "Lua.diagnostics.disable": [
         "lowercase-global"

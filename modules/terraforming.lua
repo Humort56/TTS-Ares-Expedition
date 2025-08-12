@@ -30,7 +30,7 @@ function flipOcean(pcolor)
 	end
 	addTR(pcolor)
 	activateOceanBonus(ocean,pcolor)
-	onTerraforming(pcolor, 'Ocean')
+	onTerraforming(pcolor, 'Ocean', 1)
 end
 
 -- increase ocean by given value
@@ -75,11 +75,13 @@ function getTemperature()
 
 	local cube = gftag('TemperatureCube')
 	if not cube then sendError('Could not find temperature tracker') return 0 end
+
 	for i,snap in ipairs(getSnapsWithTag(board,'TemperatureCube')) do
 		local pos = board.positionToWorld(snap.position)
 		local d = round(distance(pos,cube.getPosition()),1)
 		if d == 0 then return i end
 	end
+
 	sendError('Temperature tracker was on invalid position')
 	return 0
 end
@@ -128,7 +130,7 @@ function incTemperature(inc,pcolor)
 	callAction(" raised the temperature by " .. inc,pcolor)
 	addTR(pcolor,inc)
 	printToColor('You got ' .. inc .. ' TR for raising the temperature',pcolor)
-	onTerraforming(pcolor, 'Temperature')
+	onTerraforming(pcolor, 'Temperature', inc)
 	return inc
 end
 
@@ -160,7 +162,7 @@ function incOxygen(inc,pcolor)
 	callAction(" raised the oxygen by " .. inc,pcolor)
 	addTR(pcolor,inc)
 	printToColor('You got ' .. inc .. ' TR for raising the oxygen',pcolor)
-	onTerraforming(pcolor, 'Oxygen')
+	onTerraforming(pcolor, 'Oxygen', inc)
 	return inc
 end
 
@@ -169,7 +171,7 @@ function addForestVP(pcolor)
 	local forestCounter = gftags({'ForestCounter','c'..pcolor})
 	if forestCounter then
 		forestCounter.call('add')
-		onTerraforming(pcolor, 'Forest')
+		onTerraforming(pcolor, 'Forest', 1)
 	end
 end
 
@@ -197,10 +199,15 @@ function incForest(inc, pcolor)
 	incOxygen(inc, pcolor)
 end
 
-function onTerraforming(pcolor, terraforming)
-	mod = gmod(pcolor, 'on'..terraforming)
+-- Trigger associated effects when terraforming
+function onTerraforming(playerColor, terraformingType, amount)
+	terraformingEffects = gmod(playerColor, 'on'..terraformingType)
 
-	if 'number' ~= type(mod) then
-		onPlay(pcolor, mod)
+	if 'table' ~= type(mod) then
+		return
+	end
+
+	for i = 1, amount do
+		onPlay(playerColor, terraformingEffects)
 	end
 end

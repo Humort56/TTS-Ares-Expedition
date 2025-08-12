@@ -536,17 +536,19 @@ end
 
 function playTag(pcolor,card)
 	for _,tag in pairs(card.getTags()) do
-		local mod = 0
+		local effects = nil
+
+		-- when there are 2 time the same tag, remove the '2' at the end
 		if string.sub(tag, -1) == '2' then tag = string.sub(tag, 1, -2) end
+
 		if contains(SYMBOLS, tag) or contains(PROJ_COLORS, tag) then
-			mod = gmod(pcolor, 'onPlay'..tag)
-		end
-		if 'Project' == tag then
-			mod = gmod(pcolor, 'onPlayCard')
+			effects = gmod(pcolor, 'onPlay'..tag)
+		elseif 'Project' == tag then
+			effects = gmod(pcolor, 'onPlayCard')
 		end
 		
-		if 'number' ~= type(mod) then
-			onPlay(pcolor,mod)
+		if 'table' == type(effects) then
+			onPlay(pcolor, effects)
 		end
 	end
 	
@@ -554,6 +556,7 @@ function playTag(pcolor,card)
 
 	ProjectInstant(pcolor, card, data.instant or {})
 
+	-- play the effects which do not apply to itself
 	amodList(pcolor, data.afterEffects or {})
 
 	-- reactivate onPlayAction cards if projectLimit not reached
@@ -571,48 +574,40 @@ function createActivateProjectButton(card)
     })
 end
 
-function onPlay(pcolor, effects)
-	for effectType,typeData in pairs(effects) do
-		if contains(RESOURCES,effectType) then
-			addRes(pcolor, typeData, effectType)
-		end
-		
-		if 'Token' == effectType then
-			for _,effect in pairs(typeData) do
+function onPlay(playerColor, effects)
+	for effectType, effectData in pairs(effects) do
+		if contains(RESOURCES, effectType) then
+			addRes(playerColor, effectData, effectType)
+		elseif 'Token' == effectType then
+			for _,effect in pairs(effectData) do
 				local where = effect['where']
 
 				if 'others' == where then
 
 				else
-					local card = gcard(pcolor, where)
-					TokenAdd(pcolor, card, 1)
+					local card = gcard(playerColor, where)
+					TokenAdd(playerColor, card, 1)
 				end
 			end
-		end
-
-		if 'choice' == effectType then
-			for _,effect in pairs(typeData) do
-				local card = gcard(pcolor,effect.name)
-				ChoiceQueueInsert(pcolor, card, effect.choices)
+		elseif 'choice' == effectType then
+			for _,effect in pairs(effectData) do
+				local card = gcard(playerColor,effect.name)
+				ChoiceQueueInsert(playerColor, card, effect.choices)
 			end
-		end
-
-		if 'Action' == effectType then
-			for _,effect in pairs(typeData) do
-				gstate(pcolor, 'lastActionCard')
-				local state = gstate(pcolor, 'action')
+		elseif 'Action' == effectType then
+			for _,effect in pairs(effectData) do
+				gstate(playerColor, 'lastActionCard')
+				local state = gstate(playerColor, 'action')
 				state[effect.name] = effect.action
-				astate(pcolor,'action',state)
-				astate(pcolor,'lastActionCard',effect.name)
+				astate(playerColor,'action',state)
+				astate(playerColor,'lastActionCard',effect.name)
 
-				local card = gcard(pcolor,effect.name)
+				local card = gcard(playerColor,effect.name)
 				ProjectActionChoiceButtonCreate(card)
-				astate(pcolor, 'autoReady', false)
+				astate(playerColor, 'autoReady', false)
 			end
-		end
-
-		if 'TR' == effectType then
-			addTR(pcolor, typeData)
+		elseif 'TR' == effectType then
+			addTR(playerColor, effectData)
 		end
 	end
 end

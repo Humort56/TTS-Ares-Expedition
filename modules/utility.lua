@@ -9,6 +9,7 @@ function geffects(pcolor)
 	return state.effect
 end
 
+---@return integer|table #The result of the operation, which can be either an integer or a table.
 function gmod(pcolor, effect)
 	local effects = geffects(pcolor)
 	return effects[effect] or 0
