@@ -150,7 +150,7 @@ function TokenOnPlay(pcolor, tokenType)
         return
     end
 
-    for effectType,typeData in pairs(effects) do	
+    for effectType, typeData in pairs(effects) do	
 		if 'Token' == effectType then
 			for _,effect in pairs(typeData) do
 				local where = effect['where']

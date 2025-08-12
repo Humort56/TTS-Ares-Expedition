@@ -1,0 +1,19 @@
+{
+    "Lua.diagnostics.globals": [
+        "destroyObject",
+        "printToColor",
+        "broadcastToAll",
+        "getObjectFromGUID",
+        "broadcastToColor",
+        "Color",
+        "Physics",
+        "Player",
+        "Wait",
+        "getObjectsWithTag",
+        "getObjectsWithAllTags",
+        "JSON"
+    ],
+    "Lua.diagnostics.disable": [
+        "lowercase-global"
+    ]
+}
