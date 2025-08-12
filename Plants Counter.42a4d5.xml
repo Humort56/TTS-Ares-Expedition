@@ -1,0 +1,6 @@
+<Defaults>
+    <Panel class="root"
+        width="400"
+        height="200"/>
+</Defaults>
+<Include src="UIMultiButtonCounter.xml"/>

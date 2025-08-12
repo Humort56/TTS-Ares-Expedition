@@ -14,7 +14,8 @@
         "JSON",
         "log",
         "Global",
-        "setNotes"
+        "setNotes",
+        "self"
     ],
     "Lua.diagnostics.disable": [
         "lowercase-global"

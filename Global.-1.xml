@@ -1,0 +1,38 @@
+<Defaults>
+    <Panel class="BarPanel" preferredWidth="350" returnToOriginalPositionWhenReleased="false" allowDragging="true" visibility="Red|Blue|Yellow|Green" />
+    <Row class="BarRow"  preferredWidth="350" />
+    <Button class="BarButton" preferredHeight="60"  colors="#ca8a56|#4a454b|#993333|Grey" fontSize="22" textColors="Black|White|White|White" alignment="MiddleCenter" tooltipPosition="Above" />
+    <Button class="DrawButton" preferredHeight="60"  colors="#ca8a56|#4a454b|#993333|Grey" fontSize="18" textColors="Black|White|White|White" alignment="MiddleCenter" tooltipPosition="Above" tooltip="(L) Draw to left hand | (R) Draw to right hand" />
+</Defaults>
+
+
+<Panel id="SideBar" class="BarPanel" width="350" height="300" rectAlignment="LowerRight"  offsetXY="-10 10">
+  <TableLayout id="SideBarTable" Width="350" cellBackgroundColor="rgb{0,0,0,1}">
+     <Row id="BarRow1" class="BarRow">
+        <Cell columnSpan="5"><Button id="ReadyButton" class="BarButton" text="Ready" onClick="ui_ready" tooltip="Tell others that you have completed the current phase" /></Cell>
+        <Cell columnSpan="5"><Button id="EndRoundButton" class="BarButton" text="Next Round" onClick="ui_nextRound" tooltip="Switch phases for a new round" /></Cell>
+    </Row>
+     <Row id="BarRow2" class="BarRow">
+        <Cell columnSpan="2"><Button id="PhaseButton1" class="BarButton" text="I" onClick="ui_phase" tooltip="Select Phase I – Development" /></Cell>
+        <Cell columnSpan="2"><Button id="PhaseButton2" class="BarButton" text="II" onClick="ui_phase" tooltip="Select Phase II – Construction" /></Cell>
+        <Cell columnSpan="2"><Button id="PhaseButton3" class="BarButton" text="III" onClick="ui_phase" tooltip="Select Phase III – Action" /></Cell>
+        <Cell columnSpan="2"><Button id="PhaseButton4" class="BarButton" text="IV" onClick="ui_phase" tooltip="Select Phase IV – Production" /></Cell>
+        <Cell columnSpan="2"><Button id="PhaseButton5" class="BarButton" text="V" onClick="ui_phase" tooltip="Select Phase V – Research" /></Cell>
+    </Row>
+     <Row id="BarRow3" class="BarRow">
+        <Cell columnSpan="5"><Button id="HandDiscardButton" class="BarButton" text="Discard Hand" onClick="ui_discard" tooltip="Discard all cards in your left hand" /></Cell>
+        <Cell columnSpan="5"><Button id="HandSellButton" class="BarButton" text="Sell Hand" onClick="ui_discard" tooltip="Sell all cards in your left hand"/></Cell>
+    </Row>
+     <Row id="BarRow4" class="BarRow">
+        <Cell columnSpan="2"><Button id="DrawButton1" class="DrawButton" text="Draw 1" onClick="ui_draw"/></Cell>
+        <Cell columnSpan="2"><Button id="DrawButton2" class="DrawButton" text="Draw 2" onClick="ui_draw"/></Cell>
+        <Cell columnSpan="2"><Button id="DrawButton3" class="DrawButton" text="Draw 3" onClick="ui_draw"/></Cell>
+        <Cell columnSpan="2"><Button id="DrawButton4" class="DrawButton" text="Draw 4" onClick="ui_draw"/></Cell>
+        <Cell columnSpan="2"><Button id="DrawButton5" class="DrawButton" text="Draw 5" onClick="ui_draw"/></Cell>
+    </Row>
+    <Row id="BarRow5" class="BarRow">
+        <Cell columnSpan="10"><Button id="ScoreButton" class="BarButton" text="Score" onClick="ui_score" tooltip="Show your current score" /></Cell>
+    </Row>
+    
+  </TableLayout>
+</Panel>
