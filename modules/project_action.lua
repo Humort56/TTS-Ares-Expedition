@@ -423,13 +423,16 @@ function ProjectActionHandle(pcolor, action, card, cancel)
 		local custom = action['customAction']
 		if 'greenMCrestKeep' == custom then
 			draw(pcolor, 1)
-			local cards = Player[pcolor].getHandObjects(HAND_INDEX_DRAW)
-			local card = cards[1]
-
-			if card.hasTag('Green') then
-				addRes(pcolor, 1, 'MC')
-				discard(card)
-			end
+            -- Wait for the card to be drawn before checking the card
+            Wait.frames(function()
+                local cards = Player[pcolor].getHandObjects(HAND_INDEX_DRAW)
+                local card = cards[1]
+    
+                if card.hasTag('Green') then
+                    addRes(pcolor, 1, 'MC')
+                    discard(card)
+                end
+            end, 50)
 		end
 	end
 
