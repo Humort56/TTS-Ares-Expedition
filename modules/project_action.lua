@@ -424,6 +424,7 @@ function ProjectActionHandle(pcolor, action, card, cancel)
 		if 'greenMCrestKeep' == custom then
 			draw(pcolor, 1)
             -- Wait for the card to be drawn before checking the card
+            -- TODO: Wait for the presence of the card in the hand
             Wait.frames(function()
                 local cards = Player[pcolor].getHandObjects(HAND_INDEX_DRAW)
                 local card = cards[1]
