@@ -242,18 +242,20 @@ function ProjectActivate(card,pcolor,alt)
 
 	-- check if the current phase allow this card
 	-- todo / handle special cards
+	log(gmod(pcolor, 'playAnything'))
 	if 1 ~= CURRENT_PHASE then
 		if 'Green' == cardColor and 0 == gmod(pcolor, 'playGreenDuringConstruction') and 0 == gmod(pcolor, 'playAnything') then
-			sendError('You cannot play this project during this phase',pcolor)
+			sendError('You cannot play this project during this phase (Green during ' .. CURRENT_PHASE .. ')' ,pcolor)
 			return
 		end
 		if 1 == gmod(pcolor, 'playGreenDuringConstruction') then zmod(pcolor, 'playGreenDuringConstruction') end
 		if 'Green' == cardColor and 1 == gmod(pcolor, 'playAnything') then zmod(pcolor, 'playAnything') end
 	end
 
+	log(gmod(pcolor, 'playAnything'))
 	if 2 ~= CURRENT_PHASE then
 		if ('Blue' == cardColor or 'Red' == cardColor) and 0 == gmod(pcolor, 'playAnything') then
-			sendError('You cannot play this project during this phase',pcolor)
+			sendError('You cannot play this project during this phase (Blue/Red during ' .. CURRENT_PHASE .. ')',pcolor)
 			return
 		end
 		if 1 == gmod(pcolor, 'playAnything') then zmod(pcolor, 'playAnything') end
@@ -277,12 +279,12 @@ function ProjectActivate(card,pcolor,alt)
 			return
 		end
 		astate(pcolor,'freeGreenNineLess', 0)
-	elseif 1 == gstate(pcolor,'freeGreenTwelveLess') then
+	elseif 1 == gstate(pcolor,'freeTwelveLess') then
 		if ProjectCostOriginal(card) > 12 then
 			sendError('This project cost more than 12 MC', pcolor)
 			return
 		end
-		astate(pcolor,'freeGreenTwelveLess', 0)
+		astate(pcolor,'freeTwelveLess', 0)
 	else
 		if mc < cost then
 			sendError("You don't have enough MC ("..cost..") for this project", pcolor)

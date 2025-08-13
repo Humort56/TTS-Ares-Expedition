@@ -44,6 +44,8 @@ function activateCorp(card,pcolor,alt)
 		end
 	end
 
+	astateList(pcolor, data.state or {})
+
 	if data.tokenType then
 		card.addTag(data.tokenType..'Holder')
 	end

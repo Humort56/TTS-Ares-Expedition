@@ -31,13 +31,13 @@ local Cards = {
     DevTechs = {MC=40, effects={payGreen=-2}, drawChoice=5, manually='Choose a green card from your left hand and discard the other cards.' },
     LaunchStarIncorporated = {name='Launch Star Incorporated', MC=36, effects={payBlue=-3}, revealCards={Color='Blue'}},
     Celestior = {MC=50, action='todo',  }, --todo
-    MaiNiProductions = { -- todo
+    MaiNiProductions = {
         name='Mai-Ni Productions',
         MC=48,
-        effects={onPlayGreen={Cards=1,manually='Discard a card'}},
-        state={projectLimit=1,freeTwelveNineLess=1},
+        effects={onPlayGreen={Cards=1,manually='Discard a card'}, playAnything=1},
+        state={projectLimit=1,freeTwelveLess=1,},
         manually='Play a card from your hand that costs 12 MC or less without paying it.'
-    }, -- implement the free to play card at the start
+    },
     Zetasel = {MC=43, Cards=5, manually='Discard 4 cards', effects={onOcean={MC=2,Plant=2}}},
     -- Cards: Beginner Projects
     AcquiredCompany = {name='Acquired Company', cost=11, production={Cards={Static=1}}},

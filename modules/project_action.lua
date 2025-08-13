@@ -459,6 +459,13 @@ function MoveCard(pcolor, board, cardColor, current, last)
 end
 
 function ProjectActionGetInUse(pcolor, name)
+    local inUse = gstate(pcolor, 'actionInUse')
+
+    if 'table' ~= type(inUse) then
+        inUse = {}
+        astate(pcolor, 'actionInUse', inUse)
+    end
+
     return gstate(pcolor, 'actionInUse')[name] or false
 end
 
