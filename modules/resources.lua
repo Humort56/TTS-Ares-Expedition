@@ -253,7 +253,7 @@ function getTR(pcolor)
 end
 
 -- increase TR rank of given player by given value
-function addTR(pcolor,add)
+function addTR(pcolor, add)
 	local board = gftag('Mars')
 	local cubes = getTRCubes(pcolor)
 	local ccount = 0
@@ -283,9 +283,13 @@ function addTR(pcolor,add)
 		local pos = above(getSnapPos(board,'TR',index),ccount)
 		cube.setPosition(pos)
 	end
+
 	if #cubes > ccount then
 		for i=ccount+1,#cubes do cubes[i].destruct() end
 	end
+
+	onTerraforming(pcolor, 'TR', add)
+
 	Wait.frames(|| printToColor('You have '..getTR(pcolor)..' TR, now', pcolor), 1)
 end
 

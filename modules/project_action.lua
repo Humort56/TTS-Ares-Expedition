@@ -357,6 +357,11 @@ function ProjectActionHandle(pcolor, action, card, cancel)
 		if contains(TERRAFORMING,profit) then
 			_G['inc'..profit](value, pcolor)
 		end
+
+        if 'TR' == profit then
+            addTR(pcolor, value)
+        end
+
 		if 'Token' == profit then
 			if value.where then
                 local tokenCard = card
@@ -399,6 +404,7 @@ function ProjectActionHandle(pcolor, action, card, cancel)
                 cancelAction.profit['effects'] = effects
             end
         end
+    
         if 'state' == profit then
             astateList(pcolor, value)
         end
@@ -433,6 +439,11 @@ function ProjectActionHandle(pcolor, action, card, cancel)
     if action.manually then
 		Wait.time(|| broadcastToColor(action.manually,pcolor,'Orange'), 1)
 	end
+
+    local usedAction = gstate(pcolor, 'usedAction')
+    if usedAction == 0 then usedAction = {} end
+    usedAction[action.name or 'random'] = true
+    astate(pcolor,'usedAction', usedAction)
 
     if cancel ~= true then
         local cancelActions = gstate(pcolor, 'cancelAction')

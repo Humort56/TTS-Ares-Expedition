@@ -611,16 +611,22 @@ function onPlay(playerColor, effects)
 				ChoiceQueueInsert(playerColor, card, effect.choices)
 			end
 		elseif 'Action' == effectType then
-			for _,effect in pairs(effectData) do
-				gstate(playerColor, 'lastActionCard')
-				local state = gstate(playerColor, 'action')
-				state[effect.name] = effect.action
-				astate(playerColor,'action',state)
-				astate(playerColor,'lastActionCard',effect.name)
+			for _, effect in pairs(effectData) do
+				local usedAction = gstate(playerColor, 'usedAction')
+				local effectActionWasUsed = usedAction[effect.name] or false
+				local oncePerPhase = effect.oncePerPhase or false
 
-				local card = gcard(playerColor,effect.name)
-				ProjectActionChoiceButtonCreate(card)
-				astate(playerColor, 'autoReady', false)
+				if not oncePerPhase or not effectActionWasUsed then
+					gstate(playerColor, 'lastActionCard')
+					local state = gstate(playerColor, 'action')
+					state[effect.name] = effect.action
+					astate(playerColor, 'action', state)
+					astate(playerColor, 'lastActionCard', effect.name)
+
+					local card = gcard(playerColor, effect.name)
+					ProjectActionChoiceButtonCreate(card)
+					astate(playerColor, 'autoReady', false)
+				end
 			end
 		elseif 'TR' == effectType then
 			addTR(playerColor, effectData)

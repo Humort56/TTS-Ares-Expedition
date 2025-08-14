@@ -10,7 +10,18 @@ local Cards = {
     Ecoline = {MC=27, PlantProduction=1, effects={plantForest=-1}},
     -- Corporations: Standard
     Inventrix = {MC=33,Cards=3,effects={conditionPuffer=1}},
-    UnitedNationsMarsInitiative = {name='United Nations Mars Initiative',MC=35,effects={}},	-- 6 MC → TR on first time/phase
+    UnitedNationsMarsInitiative = {
+        name='United Nations Mars Initiative',
+        MC=35,
+        effects={
+            onTR={Action={
+                name='UNMI',
+                cost={MC=1},
+                profit={TR=3},
+                oncePerPhase=true
+            }}
+        }
+    },
     SaturnSystems = {name='Saturn Systems',MC=24, TitanProduction=1, effects={onPlayJovian={TR=1}}}, -- Test Onplay jovian exclude themselves
     ThorGate = {MC=45, HeatProduction=1, effects={payPower=-3}},
     PhoboLog = {MC=20, TitanProduction=1, effects={titanValue=1} },
