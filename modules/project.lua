@@ -1,29 +1,35 @@
-function ProjectCost(pcolor, card)
+function ProjectCost(playerColor, card)
+	if 1 == gstate(playerColor,'freeGreenNineLess') and ProjectCostOriginal(card) <= 9 then
+		return 0
+	elseif 1 == gstate(playerColor,'freeTwelveLess') and ProjectCostOriginal(card) <= 12 then
+		return 0
+	end
+
 	local data = CARDS[gnote(card)]
 	local cost = data.cost or 0
 	if cost >= 20 then 
-		cost = cost + gmod(pcolor,'payTwenty')
+		cost = cost + gmod(playerColor,'payTwenty')
 	end
 	
 	for _,symbol in ipairs(SYMBOLS) do
 		if card.hasTag(symbol) then
-			cost = cost + gmod(pcolor,'pay'..symbol)
+			cost = cost + gmod(playerColor,'pay'..symbol)
 
 			if 'Building' == symbol then
-				cost = cost - (getProduction(pcolor, 'Steel') * (STEEL_VALUE + gmod(pcolor,'steelValue')))
+				cost = cost - (getProduction(playerColor, 'Steel') * (STEEL_VALUE + gmod(playerColor,'steelValue')))
 			end
 	
 			if 'Space' == symbol then
-				cost = cost - (getProduction(pcolor, 'Titan') * (TITAN_VALUE + gmod(pcolor,'titanValue')))
+				cost = cost - (getProduction(playerColor, 'Titan') * (TITAN_VALUE + gmod(playerColor,'titanValue')))
 			end
 		end
 	end
 	
-	cost = cost + gmod(pcolor,'pay'..getProjColor(card))
-	cost = cost + gmod(pcolor,'payCard')
-	cost = cost + gmod(pcolor,'payCardTemp')
+	cost = cost + gmod(playerColor,'pay'..getProjColor(card))
+	cost = cost + gmod(playerColor,'payCard')
+	cost = cost + gmod(playerColor,'payCardTemp')
 
-	if hasActivePhase(pcolor,1) and 1 == CURRENT_PHASE then cost = cost - 3 end
+	if hasActivePhase(playerColor,1) and 1 == CURRENT_PHASE then cost = cost - 3 end
 
 	if cost < 0 then cost = 0 end
 
@@ -241,8 +247,6 @@ function ProjectActivate(card,pcolor,alt)
 	end
 
 	-- check if the current phase allow this card
-	-- todo / handle special cards
-	log(gmod(pcolor, 'playAnything'))
 	if 1 ~= CURRENT_PHASE then
 		if 'Green' == cardColor and 0 == gmod(pcolor, 'playGreenDuringConstruction') and 0 == gmod(pcolor, 'playAnything') then
 			sendError('You cannot play this project during this phase (Green during ' .. CURRENT_PHASE .. ')' ,pcolor)
@@ -252,7 +256,6 @@ function ProjectActivate(card,pcolor,alt)
 		if 'Green' == cardColor and 1 == gmod(pcolor, 'playAnything') then zmod(pcolor, 'playAnything') end
 	end
 
-	log(gmod(pcolor, 'playAnything'))
 	if 2 ~= CURRENT_PHASE then
 		if ('Blue' == cardColor or 'Red' == cardColor) and 0 == gmod(pcolor, 'playAnything') then
 			sendError('You cannot play this project during this phase (Blue/Red during ' .. CURRENT_PHASE .. ')',pcolor)
