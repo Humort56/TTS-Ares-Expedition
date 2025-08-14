@@ -203,7 +203,7 @@ end
 function onTerraforming(playerColor, terraformingType, amount)
 	terraformingEffects = gmod(playerColor, 'on'..terraformingType)
 
-	if 'table' ~= type(mod) then
+	if 'table' ~= type(terraformingEffects) then
 		return
 	end
 
